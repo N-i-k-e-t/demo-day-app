@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="Mobile-first startup demo investor response experience with immutable response recording and admin-controlled stage publishing.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+  <title>Startup Demo — Investor Experience</title>
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <div class="desktop-shell">
+      <aside class="desktop-nav">
+        <div class="brand-lockup"><div class="brand-mark">✦</div><div><strong>Startup Demo</strong><span>Live Pitch System</span></div></div>
+        <button data-route="investor" class="nav-btn active">Investor</button>
+        <button data-route="admin" class="nav-btn">Admin</button>
+        <button data-route="stage" class="nav-btn">Stage</button>
+        <button data-route="references" class="nav-btn">UI References</button>
+        <div class="desktop-nav-foot"><small>Demo build • immutable responses</small></div>
+      </aside>
+
+      <main class="desktop-main">
+        <section id="view-investor" class="route-view active">
+          <div class="desktop-toolbar"><div><span class="eyebrow">INVESTOR EXPERIENCE</span><h1>Startup Demo</h1></div><div class="toolbar-actions"><span class="status-pill"><i></i> Live</span><button class="icon-btn" data-action="open-menu" aria-label="Menu">☰</button></div></div>
+          <div class="investor-demo-wrap">
+            <div class="device-frame"><div id="phone-root" class="phone-root"></div></div>
+          </div>
+        </section>
+
+        <section id="view-admin" class="route-view">
+          <div class="desktop-toolbar"><div><span class="eyebrow">EVENT CONTROL</span><h1>Admin Command Center</h1></div><div class="toolbar-actions"><span id="admin-network" class="status-pill"><i></i> Local + Cloud</span></div></div>
+          <div id="admin-root"></div>
+        </section>
+
+        <section id="view-stage" class="route-view">
+          <div class="desktop-toolbar"><div><span class="eyebrow">PUBLIC DISPLAY</span><h1>Main Stage</h1></div><div class="toolbar-actions"><span class="stage-only-note">No individual investor responses are shown live.</span></div></div>
+          <div id="stage-root"></div>
+        </section>
+
+        <section id="view-references" class="route-view">
+          <div class="desktop-toolbar"><div><span class="eyebrow">DESIGN REFERENCE</span><h1>Generated UI Screens</h1></div></div>
+          <div id="reference-root" class="reference-grid"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="mobile-view" class="mobile-view"></div>
+  <script src="app.js" defer></script>
+</body>
+</html>

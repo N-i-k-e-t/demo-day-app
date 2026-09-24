@@ -1,0 +1,9 @@
+{
+  "name": "startup-demo-live-pitch",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Mobile-first investor startup selection UI with immutable responses and admin-controlled stage publishing.",
+  "scripts": {
+    "test": "bash tests/smoke.sh"
+  }
+}

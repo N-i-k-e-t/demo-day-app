@@ -1,0 +1,13 @@
+{
+  "version": "1.0.0",
+  "projectName": "demo-day-app",
+  "userName": "developer",
+  "skillLevel": "intermediate",
+  "outputFolder": ".vibecheck/flow",
+  "planningArtifacts": ".vibecheck\\flow\\planning-artifacts",
+  "implementationArtifacts": ".vibecheck\\flow\\implementation-artifacts",
+  "installedAt": "2026-09-24T20:08:35.140Z",
+  "ide": [
+    "vscode"
+  ]
+}

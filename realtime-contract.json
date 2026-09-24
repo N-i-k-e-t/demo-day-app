@@ -1,0 +1,17 @@
+{
+  "version": "2.0",
+  "principles": {
+    "investor_flow": "List -> Startup detail -> one immutable response -> confirmation -> back to list",
+    "stage_isolation": "The public stage never receives individual investor responses in realtime.",
+    "server_authority": "Production server is authoritative for event state and timestamps.",
+    "idempotency": "Duplicate response attempts return the original acceptance or a deterministic rejection."
+  },
+  "investor_commands": ["JOIN_EVENT", "SYNC_STATE", "SUBMIT_RESPONSE", "HEARTBEAT"],
+  "server_events": ["STATE_SYNC", "RESPONSE_ACK", "RESPONSE_ALREADY_RECORDED", "EVENT_STATUS_CHANGED", "STAGE_LOADING", "STAGE_RESULTS_PUBLISHED", "EVENT_COMPLETED"],
+  "admin_commands": ["START_EVENT", "NEXT_PITCH", "PREPARE_STAGE", "PUBLISH_RESULTS", "COMPLETE_EVENT"],
+  "critical_rules": {
+    "response_unique_key": "event_id + investor_id + pitch_id",
+    "response_mutable": false,
+    "stage_direct_vote_stream": false
+  }
+}
