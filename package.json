@@ -4,6 +4,6 @@
   "private": true,
   "description": "Mobile-first investor startup selection UI with immutable responses and admin-controlled stage publishing.",
   "scripts": {
-    "test": "bash tests/smoke.sh"
+    "test": "node tests/smoke.js"
   }
 }
