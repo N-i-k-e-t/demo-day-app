@@ -34,21 +34,21 @@
   const COLORS = { INTERESTED: 'green', EXPLORE: 'yellow', NOT_INTERESTED: 'blue' };
 
   const startups = [
-    { id: 's01', n: 1, name: 'AquaSense', sub: 'Smart water management for sustainable cities', tags: ['Climate Tech', 'IoT', 'Sustainability'], initial: 'A', accent: 'blue' },
-    { id: 's02', n: 2, name: 'VoltDrive', sub: 'EV charging infrastructure for a greener future', tags: ['Clean Energy', 'Mobility', 'Hardware'], initial: 'V', accent: 'yellow' },
-    { id: 's03', n: 3, name: 'Mark Startup', sub: 'Building the next generation AI workspace', tags: ['AI', 'Productivity', 'SaaS'], initial: 'M', accent: 'blue' },
-    { id: 's04', n: 4, name: 'HealthMate', sub: 'AI-powered personal health companion', tags: ['Health Tech', 'AI', 'Consumer App'], initial: 'H', accent: 'purple' },
-    { id: 's05', n: 5, name: 'AgriNext', sub: 'Data-driven farming for higher yields', tags: ['Agriculture', 'AI', 'Sustainability'], initial: 'A', accent: 'green' },
-    { id: 's06', n: 6, name: 'EduVerse', sub: 'Immersive learning for every student', tags: ['EdTech', 'VR/AR', 'Education'], initial: 'E', accent: 'red' },
-    { id: 's07', n: 7, name: 'LogiSmart', sub: 'Supply chain intelligence for modern businesses', tags: ['Logistics', 'AI', 'Enterprise'], initial: 'L', accent: 'blue' },
-    { id: 's08', n: 8, name: 'SafeCity', sub: 'AI-driven public safety solutions', tags: ['GovTech', 'AI', 'Smart Cities'], initial: 'S', accent: 'purple' },
-    { id: 's09', n: 9, name: 'FinMate', sub: 'Smarter financial wellness for working teams', tags: ['FinTech', 'AI', 'B2B'], initial: 'F', accent: 'green' },
-    { id: 's10', n: 10, name: 'CarbonLoop', sub: 'Practical carbon intelligence for SMEs', tags: ['Climate', 'Analytics', 'B2B'], initial: 'C', accent: 'green' },
-    { id: 's11', n: 11, name: 'FoodGrid', sub: 'Predictive food supply planning', tags: ['AgriTech', 'AI', 'Food'], initial: 'F', accent: 'yellow' },
-    { id: 's12', n: 12, name: 'CarePath', sub: 'Digital coordination for community care', tags: ['HealthTech', 'Platform', 'Care'], initial: 'C', accent: 'purple' },
-    { id: 's13', n: 13, name: 'BuildAI', sub: 'Automating early-stage construction planning', tags: ['ConTech', 'AI', 'Enterprise'], initial: 'B', accent: 'blue' },
-    { id: 's14', n: 14, name: 'FleetOS', sub: 'Operations intelligence for logistics fleets', tags: ['Mobility', 'IoT', 'SaaS'], initial: 'F', accent: 'blue' },
-    { id: 's15', n: 15, name: 'LearnLoop', sub: 'Personalized practice for lifelong learners', tags: ['EdTech', 'AI', 'Consumer'], initial: 'L', accent: 'yellow' }
+    { id: 's01', n: 1, name: 'WhatsLoan', initial: 'W', accent: 'blue' },
+    { id: 's02', n: 2, name: 'VoltDrive', initial: 'V', accent: 'yellow' },
+    { id: 's03', n: 3, name: 'Mark Startup', initial: 'M', accent: 'blue' },
+    { id: 's04', n: 4, name: 'HealthMate', initial: 'H', accent: 'purple' },
+    { id: 's05', n: 5, name: 'AgriNext', initial: 'A', accent: 'green' },
+    { id: 's06', n: 6, name: 'EduVerse', initial: 'E', accent: 'red' },
+    { id: 's07', n: 7, name: 'LogiSmart', initial: 'L', accent: 'blue' },
+    { id: 's08', n: 8, name: 'SafeCity', initial: 'S', accent: 'purple' },
+    { id: 's09', n: 9, name: 'FinMate', initial: 'F', accent: 'green' },
+    { id: 's10', n: 10, name: 'CarbonLoop', initial: 'C', accent: 'green' },
+    { id: 's11', n: 11, name: 'FoodGrid', initial: 'F', accent: 'yellow' },
+    { id: 's12', n: 12, name: 'CarePath', initial: 'C', accent: 'purple' },
+    { id: 's13', n: 13, name: 'BuildAI', initial: 'B', accent: 'blue' },
+    { id: 's14', n: 14, name: 'FleetOS', initial: 'F', accent: 'blue' },
+    { id: 's15', n: 15, name: 'LearnLoop', initial: 'L', accent: 'yellow' }
   ];
 
   const refImages = [
@@ -1407,12 +1407,10 @@
       <span class="rank" title="Booth ${s.n}">B${s.n}</span>
       <span class="logo">${s.initial}</span>
       <span class="startup-main">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+        <div style="display:flex;align-items:center;gap:6px">
           <span class="booth-tag">Booth ${s.n}</span>
-          <strong>${s.name}</strong>
+          <strong style="font-size:14.5px;color:var(--ink)">${s.name}</strong>
         </div>
-        <span>${s.sub}</span>
-        <span class="tags">${s.tags.map(t => `<small class="tag">${t}</small>`).join('')}</span>
       </span>
       <span class="choice-pill ${color}">
         ${icon ? `<span class="choice-icon">${icon}</span>` : ''}
@@ -1435,8 +1433,8 @@
 
     return `${renderHeader()}<main class="phone-content">
       <div style="margin-top:4px">
-        <h1 style="font-size:26px;margin:0 0 4px">Live Startup Pitches</h1>
-        <div class="detail-label">Browse all 15 startups. Tap any startup to record your official response.</div>
+        <h1 style="font-size:26px;margin:0 0 4px">Startup Booths</h1>
+        <div class="detail-label">Browse all ${TOTAL_PITCHES} startup booths. Tap any booth to record your official response.</div>
       </div>
       ${renderProgress()}
       <div class="filters">
@@ -1463,29 +1461,22 @@
     return `${renderHeader()}<main class="phone-content detail-screen-content ${pendingChoice ? 'has-confirm' : ''}">
       <div class="detail-header">
         <button class="back-btn" data-action="back-list">‹</button>
-        <div class="detail-label">${isEdit ? 'Update Response • ' : ''}Booth ${s.n} • Pitch ${s.n} of ${TOTAL_PITCHES}</div>
-        <span class="live-pill" style="${isEdit ? 'background:#0284c7' : ''}">${isEdit ? 'Editing' : 'Live'}</span>
+        <div class="detail-label">${isEdit ? 'Update Response • ' : ''}Booth ${s.n} of ${TOTAL_PITCHES}</div>
+        <span class="live-pill" style="${isEdit ? 'background:#0284c7' : ''}">${isEdit ? 'Editing' : 'Active'}</span>
       </div>
-      <section class="hero-card">
-        <div class="hero-logo" style="display:flex;align-items:center;gap:8px">
-          <span class="booth-tag" style="font-size:12px;padding:3px 9px">Booth ${s.n}</span>
-          <span>${s.name}</span>
+
+      <section class="booth-response-card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+          <span class="booth-tag" style="font-size:12px;padding:4px 10px;border-radius:8px">Booth ${s.n}</span>
+          <h2 style="margin:0;font-size:22px;font-weight:900;color:var(--ink)">${s.name}</h2>
         </div>
-        <h2>${s.sub}</h2>
-        <p>${isEdit ? 'Review the startup opportunity below to update your response. Any updates will sync across all your logged-in devices in real time.' : 'A focused profile for Demo Day. Review the startup opportunity below, then submit your official response.'}</p>
-        <div class="hero-visual">
-          <div style="position:absolute;left:16px;top:15px;font-size:10px;font-weight:850;color:#3656a5">BOOTH ${s.n} • STARTUP DEMO DAY</div>
-          <div style="position:absolute;left:16px;bottom:15px;right:16px" class="feature-row">
-            <div class="feature">AI Technology</div>
-            <div class="feature">Market Scalability</div>
-            <div class="feature">Traction</div>
-          </div>
-        </div>
+        <p style="margin:0;font-size:12px;color:#64748b">Select your official response below:</p>
       </section>
+
       <div class="response-stack">
         <button class="response-btn green ${pendingChoice === 'INTERESTED' ? 'selected' : ''}" data-select-response="INTERESTED">
           <span class="response-icon">👍</span>
-          <span><strong>I am interested</strong><span>Request founder introduction & follow-up deck.</span></span>
+          <span><strong>I am interested</strong><span>Request founder introduction & follow-up.</span></span>
           ${pendingChoice === 'INTERESTED' ? '<span class="selected-indicator"><span>✓ Selected</span></span>' : '<span style="margin-left:auto;color:#8fa0bb">›</span>'}
         </button>
         <button class="response-btn yellow ${pendingChoice === 'EXPLORE' ? 'selected' : ''}" data-select-response="EXPLORE">
@@ -1738,7 +1729,7 @@
         <div class="admin-hero-top">
           <div class="admin-hero-meta">
             <span class="eyebrow" style="color:#38bdf8;background:rgba(56,189,248,0.12);padding:4px 12px;border-radius:999px;border:1px solid rgba(56,189,248,0.25);display:inline-block;margin-bottom:6px">PITCH ${state.pitch} OF ${TOTAL_PITCHES} • LIVE PARTICIPATION</span>
-            <h2>${currentStartup.name} <small style="font-size:15px;font-weight:400;color:#94a3b8">(${currentStartup.sub})</small></h2>
+            <h2>Booth ${currentStartup.n} • ${currentStartup.name}</h2>
             <p>Real-time submission engine: Instant live tracking of investor votes and syndicate sentiment.</p>
           </div>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -1899,8 +1890,10 @@
                 return `<tr class="${isCurrent ? 'active-pitch-row' : ''}">
                   <td><strong style="color:${isCurrent ? '#2563eb' : 'inherit'}">${s.n}</strong></td>
                   <td>
-                    <strong style="font-size:14px">${s.name}</strong>
-                    <br><small style="color:#64748b;font-size:11px">${s.sub}</small>
+                    <div style="display:flex;align-items:center;gap:6px">
+                      <span class="booth-tag">Booth ${s.n}</span>
+                      <strong style="font-size:14px">${s.name}</strong>
+                    </div>
                   </td>
                   <td>${hasVotes ? `<strong style="font-size:14px;color:#0f172a">${count}</strong> <span style="color:#94a3b8">/ ${totalInvestors}</span>` : '<span style="color:#94a3b8;font-size:12px">—</span>'}</td>
                   <td>
@@ -2141,8 +2134,7 @@
         ${exitBtn}
         <div class="stage-content">
           <span class="stage-badge">PUBLISHED RESULTS</span>
-          <h2>${s.name}</h2>
-          <p>${s.sub}</p>
+          <h2><span class="booth-tag" style="font-size:16px;padding:4px 12px">Booth ${s.n}</span> ${s.name}</h2>
           <div class="stage-metrics">
             <div class="stage-metric stage-green"><strong>${p.i}%</strong><span>Interested</span></div>
             <div class="stage-metric stage-yellow"><strong>${p.e}%</strong><span>Explore More</span></div>
@@ -2157,9 +2149,8 @@
       ${exitBtn}
       <div class="stage-content">
         <img src="assets/logo.png" alt="AFF Logo" style="width:76px;height:76px;margin:0 auto 14px;display:block;filter:drop-shadow(0 6px 16px rgba(0,0,0,0.12))">
-        <span class="stage-badge">LIVE PITCH • ${state.pitch}/${TOTAL_PITCHES}</span>
-        <h2>${s.name}</h2>
-        <p>${s.sub}</p>
+        <span class="stage-badge">STARTUP BOOTH • ${state.pitch}/${TOTAL_PITCHES}</span>
+        <h2><span class="booth-tag" style="font-size:16px;padding:4px 12px">Booth ${s.n}</span> ${s.name}</h2>
         <div class="notice" style="max-width:650px;margin:24px auto 0;background:#101b31;color:#8fa0bb;border:1px solid #24334f">
           The public stage displays only approved, aggregated results. Investor responses are recorded privately and securely.
         </div>

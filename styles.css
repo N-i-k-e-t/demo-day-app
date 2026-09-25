@@ -84,6 +84,7 @@ button{cursor:pointer;border:0;touch-action:manipulation}
 .bottom-nav button .nav-icon{font-size:16px;line-height:1}
 .bottom-nav button .nav-label{font-size:10px;font-weight:750;letter-spacing:-0.01em}
 .hero-card{border-radius:20px;overflow:hidden;border:1px solid #dbe3f0;background:linear-gradient(145deg,#eef4ff,#fbfcff);padding:14px;margin:6px 0 14px}
+.booth-response-card{border-radius:18px;border:1px solid #dce4f2;background:linear-gradient(145deg,#f8faff,#edf2fc);padding:14px 16px;margin:6px 0 14px;box-shadow:0 2px 10px rgba(30,42,70,.03)}
 .hero-card .hero-logo{font-weight:900;font-size:18px}
 .hero-card h2{font-size:25px;line-height:1.08;margin:12px 0 8px}
 .hero-card p{font-size:12px;line-height:1.45;color:#66728f;margin:0 0 14px}
