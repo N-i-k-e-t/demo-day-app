@@ -350,17 +350,31 @@
           }, { onConflict: 'investor_key' });
           if (!error) success = true;
         } else if (item.type === 'SUBMIT_RESPONSE') {
-          const { error } = await supabase.from('demo_responses').upsert({
+          const basePayload = {
             investor_key: item.payload.investorKey,
-            investor_name: item.payload.investorName || null,
-            investor_email: item.payload.investorEmail || null,
             startup_id: item.payload.startupId,
             startup_name: item.payload.startupName || null,
             response_type: item.payload.responseType,
             idempotency_key: item.payload.idempotencyKey,
             recorded_at: item.payload.recordedAt || new Date().toISOString()
-          }, { onConflict: 'idempotency_key' });
-          if (!error) success = true;
+          };
+
+          // 1. Upsert to Supabase demo_responses (matches live database schema)
+          let { error } = await supabase.from('demo_responses').upsert(basePayload, { onConflict: 'idempotency_key' });
+
+          // 2. If onConflict error occurs, fallback to insert
+          if (error && error.code !== '23505') {
+            console.warn('[Outbox] Standard upsert error, attempting fallback insert:', error.message);
+            const insRes = await supabase.from('demo_responses').insert(basePayload);
+            if (!insRes.error) error = null;
+          }
+
+          if (!error) {
+            success = true;
+            console.log('[Outbox] Successfully recorded vote in database:', item.payload.idempotencyKey);
+          } else {
+            console.error('[Outbox] Failed to record vote:', error.message || error);
+          }
         } else if (item.type === 'ADMIN_ACTION') {
           const { error } = await supabase.from('demo_admin_actions').insert({
             action_type: item.payload.actionType,
@@ -591,7 +605,7 @@
     try {
       const { data, error } = await supabase
         .from('demo_responses')
-        .select('startup_id, startup_name, response_type, recorded_at, idempotency_key, investor_name, investor_email')
+        .select('startup_id, startup_name, response_type, recorded_at, idempotency_key')
         .eq('investor_key', key);
 
       if (!error && data && data.length > 0) {
@@ -604,8 +618,8 @@
               startupId: r.startup_id,
               startupName: r.startup_name || '',
               investorKey: key,
-              investorName: r.investor_name || session?.name || '',
-              investorEmail: r.investor_email || session?.email || '',
+              investorName: session?.name || 'Registered Investor',
+              investorEmail: session?.email || '',
               recordedAt: r.recorded_at,
               idempotencyKey: r.idempotency_key
             };
@@ -754,11 +768,21 @@
       // 2. Fetch all immutable responses
       const { data: respData, error: respErr } = await supabase
         .from('demo_responses')
-        .select('investor_key, investor_name, investor_email, startup_id, startup_name, response_type, recorded_at, idempotency_key')
+        .select('investor_key, startup_id, startup_name, response_type, recorded_at, idempotency_key')
         .order('recorded_at', { ascending: false });
 
       if (!respErr && respData) {
-        adminLiveStats.responses = respData;
+        // Hydrate investor full_name and email directly from registered investors list
+        const invMap = new Map();
+        (adminLiveStats.investors || []).forEach(inv => invMap.set(inv.investor_key, inv));
+        adminLiveStats.responses = respData.map(r => {
+          const inv = invMap.get(r.investor_key);
+          return {
+            ...r,
+            investor_name: (inv ? inv.full_name : 'Registered Investor'),
+            investor_email: (inv ? inv.email : r.investor_key)
+          };
+        });
         try {
           localStorage.setItem('startup-demo-admin-backup-v2', JSON.stringify({
             savedAt: new Date().toISOString(),
@@ -1728,36 +1752,6 @@
             <button class="btn-copy-link" data-copy-link="admin-link-refs">📋 Copy Link</button>
             <button class="btn-open-link" data-route="references">View Screens →</button>
           </div>
-        </div>
-      </section>
-
-      <!-- Custom Event & Organisation Settings (Admin-Only) -->
-      <section id="org-create-section" class="panel" style="margin-top:14px">
-        <h3>⚙️ Custom Event & Organisation Settings</h3>
-        <p class="detail-label" style="margin-bottom:14px">Customize the event title and organisation details for your syndicate or cohort.</p>
-
-        <div class="org-form-grid">
-          <div class="org-input-group">
-            <label>Organisation Name</label>
-            <input id="org-input-name" class="input" placeholder="e.g. Asian Founders Fund (AFF)" value="${orgState.name}">
-          </div>
-          <div class="org-input-group">
-            <label>Lead Organiser Email</label>
-            <input id="org-input-email" class="input" type="email" placeholder="e.g. partner@asianfoundersfund.com" value="${orgState.leadEmail}">
-          </div>
-          <div class="org-input-group">
-            <label>Demo Day Event Title</label>
-            <input id="org-input-event" class="input" placeholder="e.g. AFF Demo Day 2026" value="${orgState.eventTitle}">
-          </div>
-          <div class="org-input-group">
-            <label>Admin Passcode</label>
-            <input id="org-input-passcode" class="input" placeholder="e.g. thatAff2026@" value="${orgState.passcode}">
-          </div>
-        </div>
-
-        <div style="margin-top:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-          <button class="btn-org-primary" data-action="create-org-event">✨ Update Event Configuration</button>
-          <span class="detail-label">Saved locally & synchronized to Supabase Cloud</span>
         </div>
       </section>
     `;
