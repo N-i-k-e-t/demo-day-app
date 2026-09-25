@@ -1238,9 +1238,9 @@
 
     const currentStartup = startups[state.pitch - 1] || startups[0];
 
-    // Live Metrics: Derived from Supabase data + local fallback
-    const totalInvestors = adminLiveStats.investors.length || Object.keys(state.responseByInvestor).length || 1;
-    const totalResponsesCount = adminLiveStats.responses.length || state.investorResponses || 0;
+    // Live Metrics: Derived from Supabase data + local fallback (Clean 0 initial state, zero dummy defaults)
+    const totalInvestors = adminLiveStats.investors.length || Object.keys(state.responseByInvestor).length || (session ? 1 : 0);
+    const totalResponsesCount = adminLiveStats.responses.length || Object.values(state.responseByInvestor).reduce((acc, cur) => acc + Object.keys(cur || {}).length, 0);
 
     // Current Pitch Submission Stats
     const currentResponses = adminLiveStats.responses.length > 0
@@ -1279,8 +1279,8 @@
         <div class="live-completion-stats">
           <div class="live-completion-num">${currentSubmittedCount} <span style="font-size:20px;font-weight:600;color:#94a3b8">/ ${totalInvestors}</span></div>
           <div class="live-completion-desc">
-            <strong>${currentCompletionPct}% of registered investors have submitted</strong>
-            <span>${currentPending > 0 ? `${currentPending} investors still pending for this pitch` : 'All registered investors have submitted!'}</span>
+            <strong>${totalInvestors > 0 ? `${currentCompletionPct}% of registered investors have submitted` : 'No registered investors yet (0 joined)'}</strong>
+            <span>${totalInvestors > 0 ? (currentPending > 0 ? `${currentPending} investors still pending for this pitch` : 'All registered investors have submitted!') : 'Ready for live investor voting'}</span>
           </div>
         </div>
 
@@ -1300,7 +1300,7 @@
       <div class="dashboard">
         <div class="kpi">
           <small>Registered Investors</small>
-          <strong>${adminLiveStats.investors.length || 1}</strong>
+          <strong>${totalInvestors}</strong>
           <span class="detail-label">Passwordless accounts</span>
         </div>
         <div class="kpi">
@@ -1418,7 +1418,7 @@
       <div class="panel" style="margin-top:14px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
           <div>
-            <h3>Live Registered Investors Roster (${adminLiveStats.investors.length || 1})</h3>
+            <h3>Live Registered Investors Roster (${totalInvestors})</h3>
             <p class="detail-label">Tracks each passwordless user and how many startups they have scored.</p>
           </div>
           <button class="admin-btn blue" data-admin="refresh-data" style="font-size:11px;padding:6px 12px">↻ Refresh Cloud Data</button>
@@ -1436,38 +1436,46 @@
               </tr>
             </thead>
             <tbody>
-              ${(adminLiveStats.investors.length > 0 ? adminLiveStats.investors : (session ? [{ investor_key: session.id, full_name: session.name, email: session.email, joined_at: session.joinedAt }] : [])).map(inv => {
-                const invResps = adminLiveStats.responses.filter(r => r.investor_key === inv.investor_key);
-                const localResps = state.responseByInvestor[inv.investor_key] ? Object.values(state.responseByInvestor[inv.investor_key]) : [];
-                const respsToCount = invResps.length > 0 ? invResps : localResps;
+              ${(() => {
+                const list = adminLiveStats.investors.length > 0
+                  ? adminLiveStats.investors
+                  : (session ? [{ investor_key: session.id, full_name: session.name, email: session.email, joined_at: session.joinedAt }] : []);
+                if (list.length === 0) {
+                  return `<tr><td colspan="6" style="text-align:center;padding:24px;color:#64748b">No investors registered yet. All live submissions and scores will appear here in real time.</td></tr>`;
+                }
+                return list.map(inv => {
+                  const invResps = adminLiveStats.responses.filter(r => r.investor_key === inv.investor_key);
+                  const localResps = state.responseByInvestor[inv.investor_key] ? Object.values(state.responseByInvestor[inv.investor_key]) : [];
+                  const respsToCount = invResps.length > 0 ? invResps : localResps;
 
-                const count = respsToCount.length;
-                const pct = Math.round((count / TOTAL_PITCHES) * 100);
-                const badgeClass = count === TOTAL_PITCHES ? 'complete' : count > 0 ? 'progress' : 'pending';
-                const badgeLabel = count === TOTAL_PITCHES ? 'All 15 Completed' : count > 0 ? 'In Progress' : 'No Votes Yet';
+                  const count = respsToCount.length;
+                  const pct = Math.round((count / TOTAL_PITCHES) * 100);
+                  const badgeClass = count === TOTAL_PITCHES ? 'complete' : count > 0 ? 'progress' : 'pending';
+                  const badgeLabel = count === TOTAL_PITCHES ? 'All 15 Completed' : count > 0 ? 'In Progress' : 'No Votes Yet';
 
-                const userInterested = respsToCount.filter(r => (r.response_type || r.response) === RESPONSE.INTERESTED).length;
-                const userExplore = respsToCount.filter(r => (r.response_type || r.response) === RESPONSE.EXPLORE).length;
-                const userNotInterested = respsToCount.filter(r => (r.response_type || r.response) === RESPONSE.NOT_INTERESTED).length;
+                  const userInterested = respsToCount.filter(r => (r.response_type || r.response) === RESPONSE.INTERESTED).length;
+                  const userExplore = respsToCount.filter(r => (r.response_type || r.response) === RESPONSE.EXPLORE).length;
+                  const userNotInterested = respsToCount.filter(r => (r.response_type || r.response) === RESPONSE.NOT_INTERESTED).length;
 
-                return `<tr>
-                  <td><strong>${inv.full_name}</strong></td>
-                  <td style="color:#64748b">${inv.email}</td>
-                  <td>
-                    <div class="mini-prog">
-                      <div class="mini-prog-bar"><div class="mini-prog-fill" style="width:${pct}%"></div></div>
-                      <span><strong>${count}</strong> / ${TOTAL_PITCHES}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <span style="color:#10b981;font-weight:800">👍 ${userInterested}</span> &nbsp;
-                    <span style="color:#f59e0b;font-weight:800">? ${userExplore}</span> &nbsp;
-                    <span style="color:#3b82f6;font-weight:800">👎 ${userNotInterested}</span>
-                  </td>
-                  <td style="color:#64748b;font-size:10px">${new Date(inv.joined_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
-                  <td><span class="roster-badge ${badgeClass}">${badgeLabel}</span></td>
-                </tr>`;
-              }).join('')}
+                  return `<tr>
+                    <td><strong>${inv.full_name}</strong></td>
+                    <td style="color:#64748b">${inv.email}</td>
+                    <td>
+                      <div class="mini-prog">
+                        <div class="mini-prog-bar"><div class="mini-prog-fill" style="width:${pct}%"></div></div>
+                        <span><strong>${count}</strong> / ${TOTAL_PITCHES}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span style="color:#10b981;font-weight:800">👍 ${userInterested}</span> &nbsp;
+                      <span style="color:#f59e0b;font-weight:800">? ${userExplore}</span> &nbsp;
+                      <span style="color:#3b82f6;font-weight:800">👎 ${userNotInterested}</span>
+                    </td>
+                    <td style="color:#64748b;font-size:10px">${new Date(inv.joined_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                    <td><span class="roster-badge ${badgeClass}">${badgeLabel}</span></td>
+                  </tr>`;
+                }).join('');
+              })()}
             </tbody>
           </table>
         </div>
@@ -1860,6 +1868,7 @@
       if (confirm('Are you sure you want to reset all demo state?')) {
         recordFeed('ADMIN_ACTION', { detail: 'Demo reset' });
         localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem('startup-demo-admin-backup-v2');
         location.reload();
       }
     }
