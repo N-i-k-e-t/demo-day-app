@@ -191,7 +191,7 @@
   }
 
   function responseLabel(value) {
-    return value === RESPONSE.INTERESTED ? 'Interested' : value === RESPONSE.EXPLORE ? 'Explore more' : value === RESPONSE.NOT_INTERESTED ? 'Not interested' : 'Not responded';
+    return value === RESPONSE.INTERESTED ? 'Interested' : value === RESPONSE.EXPLORE ? 'Explore more' : value === RESPONSE.NOT_INTERESTED ? 'Not interested' : 'Tap to vote';
   }
 
   function responseColor(value) {
@@ -1175,7 +1175,7 @@
       lastSubmitted = s;
       return renderConfirmationScreen();
     }
-    return `${renderHeader()}<main class="phone-content detail-screen-content">
+    return `${renderHeader()}<main class="phone-content detail-screen-content ${pendingChoice ? 'has-confirm' : ''}">
       <div class="detail-header">
         <button class="back-btn" data-action="back-list">‹</button>
         <div class="detail-label">Pitch ${s.n} of ${TOTAL_PITCHES}</div>
@@ -2015,7 +2015,13 @@
   function getRouteFromURL() {
     const hash = window.location.hash.replace('#', '').toLowerCase();
     if (['org', 'investor', 'admin', 'stage', 'references'].includes(hash)) return hash;
-    return 'org'; // Default to Organisation Portal
+    // On mobile devices (screen width <= 768px or mobile user agent), default to 'investor' for attendees!
+    const isMobileDevice = (typeof window !== 'undefined') && (
+      window.innerWidth <= 768 || 
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    );
+    if (isMobileDevice) return 'investor';
+    return 'org'; // Default to Organisation Portal on desktop
   }
 
   function setRoute(next) {
