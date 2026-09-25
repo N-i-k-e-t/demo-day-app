@@ -25,7 +25,7 @@
   /* ══════════════════════════════════════════════════════════════
      CONSTANTS & MASTER DATA
      ══════════════════════════════════════════════════════════════ */
-  const TOTAL_PITCHES = 15;
+  const TOTAL_PITCHES = 12;
   const STORAGE_KEY = 'startup-demo-live-v2';
   const SESSION_KEY = 'startup-demo-session-v2';
   const OUTBOX_KEY = 'startup-demo-outbox-v2';
@@ -34,21 +34,150 @@
   const COLORS = { INTERESTED: 'green', EXPLORE: 'yellow', NOT_INTERESTED: 'blue' };
 
   const startups = [
-    { id: 's01', n: 1, name: 'WhatsLoan', initial: 'W', accent: 'blue' },
-    { id: 's02', n: 2, name: 'VoltDrive', initial: 'V', accent: 'yellow' },
-    { id: 's03', n: 3, name: 'Mark Startup', initial: 'M', accent: 'blue' },
-    { id: 's04', n: 4, name: 'HealthMate', initial: 'H', accent: 'purple' },
-    { id: 's05', n: 5, name: 'AgriNext', initial: 'A', accent: 'green' },
-    { id: 's06', n: 6, name: 'EduVerse', initial: 'E', accent: 'red' },
-    { id: 's07', n: 7, name: 'LogiSmart', initial: 'L', accent: 'blue' },
-    { id: 's08', n: 8, name: 'SafeCity', initial: 'S', accent: 'purple' },
-    { id: 's09', n: 9, name: 'FinMate', initial: 'F', accent: 'green' },
-    { id: 's10', n: 10, name: 'CarbonLoop', initial: 'C', accent: 'green' },
-    { id: 's11', n: 11, name: 'FoodGrid', initial: 'F', accent: 'yellow' },
-    { id: 's12', n: 12, name: 'CarePath', initial: 'C', accent: 'purple' },
-    { id: 's13', n: 13, name: 'BuildAI', initial: 'B', accent: 'blue' },
-    { id: 's14', n: 14, name: 'FleetOS', initial: 'F', accent: 'blue' },
-    { id: 's15', n: 15, name: 'LearnLoop', initial: 'L', accent: 'yellow' }
+    {
+      id: 's01',
+      n: 1,
+      name: 'Mecco',
+      subSector: 'Farm Mechanisation',
+      stage: 'Early Stage',
+      capital: '₹3 Cr',
+      headline: 'Advanced Farm Mechanisation & Modern Agri Equipment',
+      tagline: 'Empowering farmers with high-efficiency mechanised equipment and smart agricultural tools to multiply harvest yield.',
+      initial: 'M',
+      accent: 'green'
+    },
+    {
+      id: 's02',
+      n: 2,
+      name: 'Neoperk',
+      subSector: 'Soil & Precision Agriculture',
+      stage: 'Seed Stage',
+      capital: '₹2 Cr',
+      headline: 'Real-Time Soil Health Diagnostics & Precision Insights',
+      tagline: 'Instant portable soil testing and data-driven crop advisory empowering growers to optimize fertilizer usage and crop yields.',
+      initial: 'N',
+      accent: 'blue'
+    },
+    {
+      id: 's03',
+      n: 3,
+      name: 'EarthSaathi',
+      subSector: 'Clean Energy - Climate Tech',
+      stage: 'Early Stage',
+      capital: '₹4 Cr',
+      headline: 'Decarbonizing Agriculture with Clean Energy Climate Tech',
+      tagline: 'Pioneering renewable energy innovations and climate-resilient sustainability solutions for rural enterprises and farming.',
+      initial: 'E',
+      accent: 'green'
+    },
+    {
+      id: 's04',
+      n: 4,
+      name: 'Poshaqq',
+      subSector: 'Food Processing',
+      stage: 'Growth Stage',
+      capital: '₹2.5 Cr',
+      headline: 'Ghar jaisa khana with zero kitchen drama.',
+      tagline: 'Ghar jaisa khana with zero kitchen drama. Delivering healthy, nutritious ready-to-eat and processed home-style meals.',
+      initial: 'P',
+      accent: 'yellow'
+    },
+    {
+      id: 's05',
+      n: 5,
+      name: 'Deccan Pack',
+      subSector: 'Packaging',
+      stage: 'Early Stage',
+      capital: '₹3.5 Cr',
+      headline: 'Sustainable & High-Durability Agro Packaging Systems',
+      tagline: 'Next-generation eco-friendly packaging designed to preserve freshness, extend shelf-life, and cut farm-to-retail transit loss.',
+      initial: 'D',
+      accent: 'blue'
+    },
+    {
+      id: 's06',
+      n: 6,
+      name: 'WhatsLoan',
+      subSector: 'Agri-Fintech',
+      stage: 'Early Stage',
+      capital: '₹5 Cr',
+      headline: 'Bringing banks closer to farmers with agri-loan marketplace.',
+      tagline: 'We bring banks to the farmers with agri loan market place and digital financial identity to empower farmers.',
+      initial: 'W',
+      accent: 'blue'
+    },
+    {
+      id: 's07',
+      n: 7,
+      name: 'Shraddha Farms',
+      subSector: 'Dairy',
+      stage: 'Growth Stage',
+      capital: '₹5 Cr',
+      headline: 'Pure Farm-Fresh Dairy & High-Tech Cattle Management',
+      tagline: 'Modern tech-enabled dairy farming, ethical herd welfare, and direct cold-chain supply of pure farm-fresh dairy products.',
+      initial: 'S',
+      accent: 'blue'
+    },
+    {
+      id: 's08',
+      n: 8,
+      name: 'Kumbhargaon Agro',
+      subSector: 'FPO',
+      stage: 'Growth Stage',
+      capital: '₹3 Cr',
+      headline: 'Farmer Producer Collective & Direct Market Linkages',
+      tagline: 'Farmer Producer Organisation empowering rural grower collectives with bulk input procurement, grading, and direct market access.',
+      initial: 'K',
+      accent: 'green'
+    },
+    {
+      id: 's09',
+      n: 9,
+      name: 'NxtQube',
+      subSector: 'Agentic Drones',
+      stage: 'Seed Stage',
+      capital: '₹3 Cr',
+      headline: 'Autonomous Agentic Drones for Precision Agriculture',
+      tagline: 'Next-generation intelligent drone automation delivering autonomous crop scouting, multispectral imaging, and targeted field spraying.',
+      initial: 'N',
+      accent: 'purple'
+    },
+    {
+      id: 's10',
+      n: 10,
+      name: 'GAON NASP',
+      subSector: 'Rural Operating System',
+      stage: 'Early Stage',
+      capital: '₹4 Cr',
+      headline: 'Next-Gen Rural Digital Operating System for Villages',
+      tagline: 'Comprehensive rural operating system connecting grassroots communities to digital banking, logistics, and government services.',
+      initial: 'G',
+      accent: 'yellow'
+    },
+    {
+      id: 's11',
+      n: 11,
+      name: 'SP Agro',
+      subSector: 'Farm Mechanisation',
+      stage: 'Early Stage',
+      capital: '₹3 Cr',
+      headline: 'High-Efficiency Agricultural Machinery & Implements',
+      tagline: 'Manufacturing heavy-duty, cost-efficient agricultural equipment and mechanized harvesters tailored for Indian soil conditions.',
+      initial: 'S',
+      accent: 'green'
+    },
+    {
+      id: 's12',
+      n: 12,
+      name: 'Borse Automotive',
+      subSector: 'Agri Robotics',
+      stage: 'Seed Stage',
+      capital: '₹4 Cr',
+      headline: 'Intelligent Agricultural Robotics & Autonomous Vehicles',
+      tagline: 'Pioneering electric farm utility vehicles and smart robotic automation for weeding, spraying, and high-precision farm chores.',
+      initial: 'B',
+      accent: 'purple'
+    }
   ];
 
   const refImages = [
@@ -1409,7 +1538,14 @@
       <span class="startup-main">
         <div style="display:flex;align-items:center;gap:6px">
           <span class="booth-tag">Booth ${s.n}</span>
-          <strong style="font-size:14.5px;color:var(--ink)">${s.name}</strong>
+          <strong style="font-size:15px;color:var(--ink)">${s.name}</strong>
+        </div>
+        <div style="font-size:11.5px;color:#64748b;margin-top:2px;display:flex;gap:6px;align-items:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          <span style="color:#0284c7;font-weight:600">${s.subSector}</span>
+          <span>•</span>
+          <span>${s.capital}</span>
+          <span>•</span>
+          <span>${s.stage}</span>
         </div>
       </span>
       <span class="choice-pill ${color}">
@@ -1448,6 +1584,158 @@
     </main>${renderBottomNav('startups')}`;
   }
 
+  function renderScenicIllustration(s) {
+    return `<svg class="shc-svg-scene" viewBox="0 0 540 260" preserveAspectRatio="xMidYMid slice" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#bae6fd" />
+          <stop offset="55%" stop-color="#e0f2fe" />
+          <stop offset="100%" stop-color="#f0fdf4" />
+        </linearGradient>
+        <linearGradient id="hill1" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#86efac" />
+          <stop offset="100%" stop-color="#4ade80" />
+        </linearGradient>
+        <linearGradient id="hill2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#4ade80" />
+          <stop offset="100%" stop-color="#22c55e" />
+        </linearGradient>
+        <linearGradient id="hill3" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#22c55e" />
+          <stop offset="100%" stop-color="#15803d" />
+        </linearGradient>
+      </defs>
+
+      <!-- Sky Background -->
+      <rect width="540" height="260" fill="url(#skyGrad)" />
+
+      <!-- Soft Clouds -->
+      <path d="M60 60 Q80 40 110 50 Q130 35 160 50 Q180 45 195 65 Z" fill="#ffffff" opacity="0.75" />
+      <path d="M220 75 Q235 60 260 68 Q275 55 300 68 Q315 62 330 80 Z" fill="#ffffff" opacity="0.65" />
+      <path d="M420 50 Q435 38 460 44 Q475 34 495 45 Q510 40 520 58 Z" fill="#ffffff" opacity="0.6" />
+
+      <!-- Distant Hills -->
+      <path d="M0 130 Q120 70 240 120 Q360 80 480 110 L540 125 L540 260 L0 260 Z" fill="#99f6e4" opacity="0.45" />
+      <path d="M-20 145 Q80 100 200 135 Q320 95 440 130 L540 140 L540 260 L0 260 Z" fill="url(#hill1)" opacity="0.7" />
+
+      <!-- Rolling Green Fields -->
+      <path d="M0 160 Q110 120 230 155 Q350 130 540 150 L540 260 L0 260 Z" fill="url(#hill2)" />
+      <path d="M0 185 Q130 150 280 180 Q410 160 540 175 L540 260 L0 260 Z" fill="url(#hill3)" />
+
+      <!-- Crop Furrow Lines -->
+      <path d="M30 260 Q80 200 120 165" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" opacity="0.7" />
+      <path d="M90 260 Q140 205 180 170" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" opacity="0.7" />
+      <path d="M160 260 Q200 210 235 178" stroke="#16a34a" stroke-width="2" stroke-linecap="round" opacity="0.6" />
+
+      <!-- Green Tractor -->
+      <g transform="translate(155, 126) scale(0.72)">
+        <path d="M12 28 L28 28 L34 14 L18 14 Z" fill="#15803d" />
+        <path d="M20 17 L30 17 L27 25 L16 25 Z" fill="#bae6fd" opacity="0.85" />
+        <rect x="2" y="24" width="38" height="12" rx="3" fill="#16a34a" />
+        <rect x="2" y="16" width="4" height="10" rx="1.5" fill="#15803d" />
+        <circle cx="12" cy="38" r="11" fill="#1e293b" />
+        <circle cx="12" cy="38" r="6" fill="#64748b" />
+        <circle cx="12" cy="38" r="2.5" fill="#f8fafc" />
+        <circle cx="36" cy="41" r="7" fill="#1e293b" />
+        <circle cx="36" cy="41" r="3.5" fill="#64748b" />
+        <circle cx="36" cy="41" r="1.5" fill="#f8fafc" />
+      </g>
+
+      <!-- Foreground Leaves -->
+      <g transform="translate(20, 195) scale(0.75)">
+        <path d="M0 40 Q25 15 50 10 Q35 35 0 40 Z" fill="#22c55e" />
+        <path d="M0 40 Q-15 10 10 0 Q10 25 0 40 Z" fill="#16a34a" />
+      </g>
+      <g transform="translate(285, 175) scale(0.9)">
+        <path d="M0 45 Q30 15 55 10 Q40 40 0 45 Z" fill="#16a34a" />
+        <path d="M0 45 Q-20 15 5 0 Q15 28 0 45 Z" fill="#22c55e" />
+      </g>
+
+      <!-- Bank Building with Pillars & Pediment -->
+      <g transform="translate(390, 122) scale(0.74)">
+        <rect x="0" y="70" width="84" height="8" rx="2" fill="#2563eb" />
+        <rect x="4" y="65" width="76" height="6" fill="#3b82f6" />
+        <polygon points="42,10 0,34 84,34" fill="#1d4ed8" />
+        <rect x="2" y="34" width="80" height="7" fill="#3b82f6" />
+        <rect x="10" y="41" width="8" height="24" rx="1.5" fill="#60a5fa" />
+        <rect x="28" y="41" width="8" height="24" rx="1.5" fill="#60a5fa" />
+        <rect x="46" y="41" width="8" height="24" rx="1.5" fill="#60a5fa" />
+        <rect x="64" y="41" width="8" height="24" rx="1.5" fill="#60a5fa" />
+      </g>
+
+      <!-- Wi-Fi / Radio Broadcast Arcs -->
+      <g transform="translate(378, 116) scale(0.85)">
+        <path d="M0 20 A 24 24 0 0 1 34 0" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.85" />
+        <path d="M5 28 A 16 16 0 0 1 28 12" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.9" />
+        <path d="M10 36 A 8 8 0 0 1 20 26" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" fill="none" />
+      </g>
+
+      <!-- Upward Growth Arrow -->
+      <path d="M398 178 L398 158 L393 163 L398 151 L403 163 L398 158" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="#22c55e" />
+
+      <!-- Smartphone with Rupee Coin & Sprout -->
+      <g transform="translate(332, 136) scale(0.88)">
+        <rect x="0" y="0" width="54" height="92" rx="11" fill="#0f172a" />
+        <rect x="2.5" y="2.5" width="49" height="87" rx="9" fill="#ffffff" />
+        <rect x="21" y="6" width="12" height="2.5" rx="1" fill="#cbd5e1" />
+        <circle cx="27" cy="48" r="16.5" fill="#15803d" />
+        <text x="27" y="54" font-family="system-ui, -apple-system, sans-serif" font-size="17" font-weight="900" fill="#ffffff" text-anchor="middle">₹</text>
+        <path d="M27 31 Q23 20 15 18 Q19 29 27 31 Z" fill="#22c55e" />
+        <path d="M27 31 Q31 20 39 18 Q35 29 27 31 Z" fill="#4ade80" />
+      </g>
+    </svg>`;
+  }
+
+  function renderStartupHeroCard(s) {
+    return `<div class="startup-hero-card">
+      <div class="shc-header">
+        <div class="shc-info">
+          <h2 class="shc-title">${s.name}</h2>
+          <div class="shc-headline">${s.headline}</div>
+          <p class="shc-tagline">${s.tagline}</p>
+        </div>
+        <div class="shc-logo-box" title="${s.name} Logo">
+          <div class="shc-logo-icon">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="4" ry="4"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+          </div>
+          <span class="shc-logo-text">Add Startup<br>Logo</span>
+        </div>
+      </div>
+
+      <div class="shc-banner">
+        <span class="shc-badge">STARTUP DEMO</span>
+        ${renderScenicIllustration(s)}
+        <div class="shc-metrics">
+          <div class="shc-metric-chip">
+            <span class="shc-metric-icon">🍃</span>
+            <div class="shc-metric-text">
+              <strong title="${s.subSector}">${s.subSector}</strong>
+              <span>Sub-Sector</span>
+            </div>
+          </div>
+          <div class="shc-metric-chip">
+            <span class="shc-metric-icon">🪙</span>
+            <div class="shc-metric-text">
+              <strong>${s.capital}</strong>
+              <span>Capital</span>
+            </div>
+          </div>
+          <div class="shc-metric-chip">
+            <span class="shc-metric-icon">📊</span>
+            <div class="shc-metric-text">
+              <strong>${s.stage}</strong>
+              <span>Stage</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
   function renderDetailScreen() {
     const s = selectedStartup;
     const r = responseFor(s.id);
@@ -1465,13 +1753,13 @@
         <span class="live-pill" style="${isEdit ? 'background:#0284c7' : ''}">${isEdit ? 'Editing' : 'Active'}</span>
       </div>
 
-      <section class="booth-response-card">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
-          <span class="booth-tag" style="font-size:12px;padding:4px 10px;border-radius:8px">Booth ${s.n}</span>
-          <h2 style="margin:0;font-size:22px;font-weight:900;color:var(--ink)">${s.name}</h2>
+      ${renderStartupHeroCard(s)}
+
+      <div style="margin:4px 0 10px;padding:0 2px">
+        <div class="detail-label" style="font-weight:800;color:#475569;font-size:12px;letter-spacing:0.04em">
+          ${isEdit ? 'UPDATE YOUR OFFICIAL INVESTOR RESPONSE:' : 'SELECT YOUR OFFICIAL INVESTOR RESPONSE:'}
         </div>
-        <p style="margin:0;font-size:12px;color:#64748b">Select your official response below:</p>
-      </section>
+      </div>
 
       <div class="response-stack">
         <button class="response-btn green ${pendingChoice === 'INTERESTED' ? 'selected' : ''}" data-select-response="INTERESTED">
@@ -1611,7 +1899,7 @@
         <img src="assets/logo.png" alt="AFF Logo" style="width:68px;height:68px;margin:0 auto 10px;display:block;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.08))">
         <div class="hero-logo" style="justify-content:center">Investor Hub</div>
         <h2>Welcome to ${orgState.eventTitle || 'AFF Demo Day 2026'}</h2>
-        <p>Passwordless voting — sign in to score all 15 startups live. Your credentials and scores are preserved safely across sessions.</p>
+        <p>Passwordless voting — sign in to score all 12 startups live. Your credentials and scores are preserved safely across sessions.</p>
       </section>
 
       ${hasSaved ? `
@@ -1759,9 +2047,9 @@
       <section class="admin-hero-live">
         <div class="admin-hero-top">
           <div class="admin-hero-meta">
-            <span class="eyebrow" style="color:#38bdf8;background:rgba(56,189,248,0.12);padding:4px 12px;border-radius:999px;border:1px solid rgba(56,189,248,0.25);display:inline-block;margin-bottom:6px">15 STARTUP BOOTHS • REAL-TIME INVESTOR RESPONSES</span>
+            <span class="eyebrow" style="color:#38bdf8;background:rgba(56,189,248,0.12);padding:4px 12px;border-radius:999px;border:1px solid rgba(56,189,248,0.25);display:inline-block;margin-bottom:6px">12 STARTUP BOOTHS • REAL-TIME INVESTOR RESPONSES</span>
             <h2>Startup Demo Day Response Hub</h2>
-            <p>Live responses recorded per startup across all 15 booths with instant syndicate sentiment.</p>
+            <p>Live responses recorded per startup across all 12 booths with instant syndicate sentiment.</p>
           </div>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             <span class="net-badge online"><span class="live-pulse-dot" style="width:7px;height:7px"></span> Realtime Submissions Stream</span>
@@ -1772,7 +2060,7 @@
           <div class="live-completion-num">${totalResponsesCount > 0 ? totalResponsesCount : '0'} <span style="font-size:22px;font-weight:600;color:#94a3b8">/ ${maxExpectedResponses > 0 ? maxExpectedResponses : '0'}</span></div>
           <div class="live-completion-desc">
             <strong>${totalResponsesCount > 0 ? `${overallCompletionPct}% of total expected booth responses recorded` : 'Awaiting initial investor responses'}</strong>
-            <span>${totalInvestors > 0 ? `${totalVotedInvestorsCount} of ${totalInvestors} investors active (${allDoneInvestorsCount} completed all 15 booths)` : 'Awaiting live investor participation'}</span>
+            <span>${totalInvestors > 0 ? `${totalVotedInvestorsCount} of ${totalInvestors} investors active (${allDoneInvestorsCount} completed all 12 booths)` : 'Awaiting live investor participation'}</span>
           </div>
         </div>
 
@@ -1787,7 +2075,7 @@
             <span class="live-stat-chip blue">👎 <strong>${allNotInterested}</strong> Not Interested</span>
             <span class="live-stat-chip gray">⏳ <strong>${Math.max(0, maxExpectedResponses - totalResponsesCount)}</strong> Pending</span>
           ` : `
-            <span class="live-stat-chip gray" style="font-weight:600;padding:6px 14px">— Awaiting live responses across 15 startup booths —</span>
+            <span class="live-stat-chip gray" style="font-weight:600;padding:6px 14px">— Awaiting live responses across 12 startup booths —</span>
           `}
         </div>
       </section>
@@ -1810,14 +2098,14 @@
           <span class="detail-label">${totalInvestors > 0 ? Math.round((totalVotedInvestorsCount / totalInvestors) * 100) : 0}% participated</span>
         </div>
         <div class="kpi kpi-pitch">
-          <small>🎯 All 15 Done</small>
+          <small>🎯 All 12 Done</small>
           <strong>${allDoneInvestorsCount} <span style="font-size:18px;font-weight:600;color:#94a3b8">/ ${totalInvestors}</span></strong>
           <span class="detail-label">${inProgressInvestorsCount} in progress</span>
         </div>
         <div class="kpi kpi-total">
           <small>📈 Total Responses</small>
           <strong>${totalResponsesCount}</strong>
-          <span class="detail-label">Across all 15 booths</span>
+          <span class="detail-label">Across all 12 booths</span>
         </div>
         <div class="kpi kpi-network">
           <small>🌐 Cloud Sync</small>
@@ -1886,10 +2174,10 @@
       <div class="panel" style="margin-top:22px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
           <div>
-            <h3 style="margin:0 0 4px">Startup Booth Completion Matrix (All 15 Startups)</h3>
+            <h3 style="margin:0 0 4px">Startup Booth Completion Matrix (All 12 Startups)</h3>
             <p class="detail-label" style="margin:0">Real-time breakdown of how many investors have filled their response for each startup booth.</p>
           </div>
-          <span class="live-stat-chip blue" style="font-weight:800;font-size:11px">15 Booths Total</span>
+          <span class="live-stat-chip blue" style="font-weight:800;font-size:11px">12 Booths Total</span>
         </div>
         <div class="roster-wrap">
           <table class="roster-table">
@@ -1953,13 +2241,13 @@
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
           <div>
             <h3 style="margin:0 0 4px">Live Registered Investors Roster (${totalInvestors})</h3>
-            <p class="detail-label" style="margin:0">Live presence and per-startup responses tracker across all 15 booths.</p>
+            <p class="detail-label" style="margin:0">Live presence and per-startup responses tracker across all 12 booths.</p>
           </div>
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <div class="roster-tabs">
               <button class="roster-tab-btn ${adminRosterFilter === 'all' ? 'active' : ''}" data-roster-filter="all">All (${totalInvestors})</button>
               <button class="roster-tab-btn ${adminRosterFilter === 'online' ? 'active' : ''}" data-roster-filter="online">🟢 Online Now (${onlineNowCount})</button>
-              <button class="roster-tab-btn ${adminRosterFilter === 'complete' ? 'active' : ''}" data-roster-filter="complete">✅ All 15 Done (${allDoneInvestorsCount})</button>
+              <button class="roster-tab-btn ${adminRosterFilter === 'complete' ? 'active' : ''}" data-roster-filter="complete">✅ All 12 Done (${allDoneInvestorsCount})</button>
               <button class="roster-tab-btn ${adminRosterFilter === 'progress' ? 'active' : ''}" data-roster-filter="progress">⚡ In Progress (${inProgressInvestorsCount})</button>
               <button class="roster-tab-btn ${adminRosterFilter === 'unvoted' ? 'active' : ''}" data-roster-filter="unvoted">⏳ No Responses (${noResponseInvestorsCount})</button>
             </div>
@@ -1971,7 +2259,7 @@
             <thead>
               <tr>
                 <th>Investor Name & Details</th>
-                <th>Responses Per Startup (15 Booths)</th>
+                <th>Responses Per Startup (12 Booths)</th>
                 <th>Progress</th>
                 <th>Sentiment (👍 / ? / 👎)</th>
                 <th>Joined</th>
@@ -2004,13 +2292,13 @@
                   const hasUserVotes = count > 0;
                   const pct = Math.round((count / TOTAL_PITCHES) * 100);
                   const badgeClass = count === TOTAL_PITCHES ? 'complete' : count > 0 ? 'progress' : 'pending';
-                  const badgeLabel = count === TOTAL_PITCHES ? 'All 15 Completed' : count > 0 ? 'In Progress' : 'No Responses Yet';
+                  const badgeLabel = count === TOTAL_PITCHES ? 'All 12 Completed' : count > 0 ? 'In Progress' : 'No Responses Yet';
 
                   const userInterested = Object.values(respMap).filter(v => v === RESPONSE.INTERESTED).length;
                   const userExplore = Object.values(respMap).filter(v => v === RESPONSE.EXPLORE).length;
                   const userNotInterested = Object.values(respMap).filter(v => v === RESPONSE.NOT_INTERESTED).length;
 
-                  // 15 Booth Badges per startup
+                  // 12 Booth Badges per startup
                   const boothBadges = startups.map(s => {
                     const resp = respMap[s.id];
                     if (resp === RESPONSE.INTERESTED) {
@@ -2261,7 +2549,7 @@
           </div>
           <h1>${orgState.eventTitle || 'AFF Demo Day 2026'} is Live</h1>
           <p>
-            Hosted by <strong>${orgState.name || 'Asian Founders Fund (AFF)'}</strong>. 15 venture-backed tech startups pitching live to accredited investors and syndicate partners.
+            Hosted by <strong>${orgState.name || 'Asian Founders Fund (AFF)'}</strong>. 12 venture-backed tech startups pitching live to accredited investors and syndicate partners.
           </p>
           <div class="org-actions-row">
             <button class="btn-org-secondary" data-action="org-admin-login">🔒 Organiser Admin Access</button>
@@ -2275,11 +2563,11 @@
             <div class="org-event-title">
               <span class="eyebrow" style="color:#2563eb">ACTIVE LIVE EVENT</span>
               <h2>${orgState.eventTitle || 'AFF Demo Day 2026'}</h2>
-              <p>Hosted by <strong>${orgState.name || 'Asian Founders Fund (AFF)'}</strong> • 15 Pre-Configured Startups • Live Voting in Progress</p>
+              <p>Hosted by <strong>${orgState.name || 'Asian Founders Fund (AFF)'}</strong> • 12 Pre-Configured Startups • Live Voting in Progress</p>
             </div>
             <div class="org-event-badges">
               <span class="net-badge online"><i></i> Live Pitching Active</span>
-              <span class="live-stat-chip blue">15 Tech Startups</span>
+              <span class="live-stat-chip blue">12 Tech Startups</span>
               <span class="live-stat-chip green">1,000+ Capacity</span>
             </div>
           </div>

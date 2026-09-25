@@ -1495,5 +1495,226 @@ body.route-references .desktop-main {
   100% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(16,185,129,0); }
 }
 
+/* ══════════════════════════════════════════════════════════════
+   STARTUP HERO PRESENTATION CARD (Exact Mockup Design)
+   ══════════════════════════════════════════════════════════════ */
+.startup-hero-card {
+  background: #ffffff;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 24px;
+  padding: 22px;
+  box-shadow: 0 10px 30px -4px rgba(37, 99, 235, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+  margin-bottom: 18px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.shc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.shc-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.shc-title {
+  font-size: 26px;
+  font-weight: 900;
+  color: #091224;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  margin: 0 0 6px 0;
+}
+
+.shc-headline {
+  font-size: 16.5px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.32;
+  margin: 0 0 7px 0;
+}
+
+.shc-tagline {
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.48;
+  margin: 0;
+}
+
+.shc-logo-box {
+  width: 88px;
+  height: 88px;
+  flex-shrink: 0;
+  border: 1.5px dashed #93c5fd;
+  border-radius: 18px;
+  background: #f0f7ff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 5px;
+  padding: 6px;
+  transition: all 0.2s ease;
+}
+
+.shc-logo-box:hover {
+  background: #e0f2fe;
+  border-color: #60a5fa;
+}
+
+.shc-logo-icon {
+  display: grid;
+  place-items: center;
+  color: #60a5fa;
+}
+
+.shc-logo-text {
+  font-size: 9.5px;
+  font-weight: 750;
+  color: #475569;
+  line-height: 1.15;
+}
+
+.shc-banner {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #bae6fd 0%, #e0f2fe 40%, #dcfce7 100%);
+  border: 1px solid rgba(191, 219, 254, 0.6);
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.shc-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 5;
+  background: rgba(255, 255, 255, 0.95);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  padding: 5px 12px;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.shc-svg-scene {
+  width: 100%;
+  height: 100%;
+  display: block;
+  min-height: 200px;
+}
+
+.shc-metrics {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  right: 10px;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.shc-metric-chip {
+  background: rgba(255, 255, 255, 0.96);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-radius: 13px;
+  padding: 8px 9px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.shc-metric-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.shc-metric-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.shc-metric-text strong {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.shc-metric-text span {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748b;
+  line-height: 1.2;
+  margin-top: 2px;
+}
+
+@media (max-width: 480px) {
+  .startup-hero-card {
+    padding: 16px;
+    border-radius: 20px;
+  }
+  .shc-title {
+    font-size: 22px;
+  }
+  .shc-headline {
+    font-size: 15px;
+  }
+  .shc-tagline {
+    font-size: 12px;
+  }
+  .shc-logo-box {
+    width: 76px;
+    height: 76px;
+    border-radius: 14px;
+  }
+  .shc-metrics {
+    gap: 6px;
+    bottom: 8px;
+    left: 8px;
+    right: 8px;
+  }
+  .shc-metric-chip {
+    padding: 6px 7px;
+    border-radius: 11px;
+    gap: 6px;
+  }
+  .shc-metric-icon {
+    font-size: 15px;
+  }
+  .shc-metric-text strong {
+    font-size: 11px;
+  }
+  .shc-metric-text span {
+    font-size: 9.5px;
+  }
+}
+
+
 
 

@@ -21,7 +21,7 @@
     APP_VERSION: userConfig.APP_VERSION || '2.1.0',
     ENVIRONMENT: userConfig.ENVIRONMENT || 'production',
     DEFAULT_PASSCODE: userConfig.DEFAULT_PASSCODE || 'thatAff2026@',
-    MAX_CONCURRENT_PITCHES: userConfig.MAX_CONCURRENT_PITCHES || 15
+    MAX_CONCURRENT_PITCHES: userConfig.MAX_CONCURRENT_PITCHES || 12
   };
 
   window.__ENV__ = window.APP_CONFIG;
