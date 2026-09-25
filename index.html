@@ -8,7 +8,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
-  <link rel="apple-touch-icon" href="assets/icon.svg">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+  <link rel="apple-touch-icon" href="assets/icon-app.png">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="styles.css">
   <title>Startup Demo — Live Pitch OS</title>
@@ -17,7 +18,7 @@
   <meta property="og:type" content="website">
   <meta property="og:title" content="AFF Demo Day 2026 — Live Pitch Experience">
   <meta property="og:description" content="Mobile-first startup demo investor response system with immutable recording and real-time stage sync.">
-  <meta property="og:image" content="assets/icon.svg">
+  <meta property="og:image" content="assets/icon-app.png">
   <meta name="twitter:card" content="summary_large_image">
 
   <!-- Production Runtime Config & Supabase Client -->
@@ -28,7 +29,7 @@
   <div id="app" class="app-shell">
     <div class="desktop-shell">
       <aside class="desktop-nav">
-        <div class="brand-lockup"><div class="brand-mark">✦</div><div><strong>AFF DemoDay</strong><span>Live Pitch OS</span></div></div>
+        <div class="brand-lockup"><div class="brand-mark"><img src="assets/logo.png" alt="AFF Logo"></div><div><strong>AFF DemoDay</strong><span>Live Pitch OS</span></div></div>
         <button data-route="org" class="nav-btn active">🏛️ Organisation Portal</button>
         <button data-route="investor" class="nav-btn">📱 Investor Experience</button>
         <div class="admin-nav-item" style="margin-top:auto;padding-top:14px;border-top:1px solid rgba(255,255,255,0.1)">
@@ -85,7 +86,9 @@
   <!-- Admin Passcode Modal -->
   <div id="admin-lock-overlay" class="admin-lock-overlay" style="display:none">
     <div class="admin-lock-modal">
-      <div class="admin-lock-icon">🔒</div>
+      <div class="admin-lock-icon" style="background:transparent;box-shadow:none;display:grid;place-items:center;margin-bottom:12px">
+        <img src="assets/logo.png" alt="AFF Logo" style="width:58px;height:58px;object-fit:contain">
+      </div>
       <h2>Admin Access</h2>
       <p>Enter passcode to access the Admin Command Center</p>
       <input id="admin-passcode" type="password" class="input admin-passcode-input" placeholder="Enter admin passcode" autocomplete="off">

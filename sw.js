@@ -12,7 +12,9 @@ const STATIC_ASSETS = [
   './app.js',
   './config.js',
   './manifest.webmanifest',
-  './assets/icon.svg'
+  './assets/icon.svg',
+  './assets/logo.png',
+  './assets/icon-app.png'
 ];
 
 // Install: Pre-cache core shell assets & skip waiting immediately

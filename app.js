@@ -978,7 +978,7 @@
 
     return `<header class="phone-header">
       <div class="brand-mini">
-        <div class="brand-mini-mark">✦</div>
+        <div class="brand-mini-mark"><img src="assets/logo.png" alt="AFF Logo"></div>
         <div>
           <strong>Startup Demo <span style="color:#5c55ef;font-weight:850">Live</span></strong>
           <small>Investor Voting Hub</small>
@@ -1142,8 +1142,9 @@
     const hasSaved = saved.length > 0;
 
     return `${renderHeader()}<main class="phone-content" style="display:flex;flex-direction:column;justify-content:center">
-      <section class="hero-card" style="margin-bottom:12px">
-        <div class="hero-logo">Investor Voting Hub</div>
+      <section class="hero-card" style="margin-bottom:12px;text-align:center">
+        <img src="assets/logo.png" alt="AFF Logo" style="width:68px;height:68px;margin:0 auto 10px;display:block;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.08))">
+        <div class="hero-logo" style="justify-content:center">Investor Voting Hub</div>
         <h2>Welcome to ${orgState.eventTitle || 'AFF Demo Day 2026'}</h2>
         <p>Passwordless voting — sign in to score all 15 startups live. Your credentials and scores are preserved safely across sessions.</p>
       </section>
@@ -1491,6 +1492,7 @@
 
     root.innerHTML = `<section class="stage-screen">
       <div class="stage-content">
+        <img src="assets/logo.png" alt="AFF Logo" style="width:76px;height:76px;margin:0 auto 14px;display:block;filter:drop-shadow(0 6px 16px rgba(0,0,0,0.12))">
         <span class="stage-badge">LIVE PITCH • ${state.pitch}/${TOTAL_PITCHES}</span>
         <h2>${s.name}</h2>
         <p>${s.sub}</p>
@@ -1565,7 +1567,10 @@
       <div class="org-landing-wrap">
         <!-- Hero Banner -->
         <section class="org-hero-banner">
-          <span class="org-badge"><i></i> ENTERPRISE DEMO DAY OPERATING SYSTEM</span>
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px">
+            <img src="assets/logo.png" alt="AFF Logo" style="width:64px;height:64px;filter:drop-shadow(0 6px 14px rgba(0,0,0,0.12));flex-shrink:0">
+            <span class="org-badge"><i></i> ENTERPRISE DEMO DAY OPERATING SYSTEM</span>
+          </div>
           <h1>Empower Your Demo Day with 1,000+ Real-Time Investor Interactions</h1>
           <p>
             The production-grade pitch platform engineered for venture capital funds, accelerators, and demo days.
