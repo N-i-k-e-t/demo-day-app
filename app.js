@@ -74,6 +74,14 @@
     investorResponses: 0
   };
 
+  // Suppress automatic browser PWA install prompt on first load so user isn't interrupted
+  if (typeof window !== 'undefined') {
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      window.__deferredInstallPrompt = e;
+    });
+  }
+
   /* ══════════════════════════════════════════════════════════════
      RUNTIME APP STATE
      ══════════════════════════════════════════════════════════════ */
@@ -84,6 +92,7 @@
   let lastSubmitted = null;
   let route = 'investor';
   let startupFilter = 'all';
+  let myResponseFilter = 'all'; // 'all' | 'INTERESTED' | 'EXPLORE' | 'NOT_INTERESTED'
   let toastTimer = null;
   let pendingChoice = null;
   let isEditingVote = false;
@@ -203,7 +212,7 @@
   }
 
   function responseIcon(value) {
-    return value === RESPONSE.INTERESTED ? '👍' : value === RESPONSE.EXPLORE ? '?' : value === RESPONSE.NOT_INTERESTED ? '👎' : '○';
+    return value === RESPONSE.INTERESTED ? '👍' : value === RESPONSE.EXPLORE ? '?' : value === RESPONSE.NOT_INTERESTED ? '👎' : '';
   }
 
   function generateSecureToken() {
@@ -1372,8 +1381,8 @@
       <div class="brand-mini">
         <div class="brand-mini-mark"><img src="assets/logo.png" alt="AFF Logo"></div>
         <div>
-          <strong>Startup Demo <span style="color:#5c55ef;font-weight:850">Live</span></strong>
-          <small>Investor Voting Hub</small>
+          <strong>Startup Demo <span style="color:#5c55ef;font-weight:850">Day</span></strong>
+          <small>Investor Hub</small>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:6px">
@@ -1393,16 +1402,20 @@
   function renderStartupCard(s) {
     const r = responseFor(s.id);
     const color = responseColor(r?.response);
+    const icon = responseIcon(r?.response);
     return `<button class="startup-card choice-${color}" data-startup="${s.id}">
-      <span class="rank">${s.n}</span>
+      <span class="rank" title="Booth ${s.n}">B${s.n}</span>
       <span class="logo">${s.initial}</span>
       <span class="startup-main">
-        <strong>${s.name}</strong>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+          <span class="booth-tag">Booth ${s.n}</span>
+          <strong>${s.name}</strong>
+        </div>
         <span>${s.sub}</span>
         <span class="tags">${s.tags.map(t => `<small class="tag">${t}</small>`).join('')}</span>
       </span>
       <span class="choice-pill ${color}">
-        <span class="choice-icon">${responseIcon(r?.response)}</span>
+        ${icon ? `<span class="choice-icon">${icon}</span>` : ''}
         ${responseLabel(r?.response)}
       </span>
       <span class="chevron">›</span>
@@ -1429,7 +1442,7 @@
       <div class="filters">
         <button class="chip ${startupFilter === 'all' ? 'active' : ''}" data-filter="all">All Startups (${TOTAL_PITCHES})</button>
         <button class="chip ${startupFilter === 'pending' ? 'active' : ''}" data-filter="pending">Pending (${notAnswered})</button>
-        <button class="chip ${startupFilter === 'voted' ? 'active' : ''}" data-filter="voted">My Votes (${totalAnswered})</button>
+        <button class="chip ${startupFilter === 'voted' ? 'active' : ''}" data-filter="voted">My Responses (${totalAnswered})</button>
       </div>
       <section class="startup-list">
         ${filtered.length > 0 ? filtered.map(renderStartupCard).join('') : '<div class="notice">No startups matching this filter.</div>'}
@@ -1450,15 +1463,18 @@
     return `${renderHeader()}<main class="phone-content detail-screen-content ${pendingChoice ? 'has-confirm' : ''}">
       <div class="detail-header">
         <button class="back-btn" data-action="back-list">‹</button>
-        <div class="detail-label">${isEdit ? 'Update Vote • ' : ''}Pitch ${s.n} of ${TOTAL_PITCHES}</div>
+        <div class="detail-label">${isEdit ? 'Update Response • ' : ''}Booth ${s.n} • Pitch ${s.n} of ${TOTAL_PITCHES}</div>
         <span class="live-pill" style="${isEdit ? 'background:#0284c7' : ''}">${isEdit ? 'Editing' : 'Live'}</span>
       </div>
       <section class="hero-card">
-        <div class="hero-logo">${s.name}</div>
+        <div class="hero-logo" style="display:flex;align-items:center;gap:8px">
+          <span class="booth-tag" style="font-size:12px;padding:3px 9px">Booth ${s.n}</span>
+          <span>${s.name}</span>
+        </div>
         <h2>${s.sub}</h2>
-        <p>${isEdit ? 'Review the startup opportunity below to update your response. Any updates will sync across all your logged-in devices in real time.' : 'A focused profile for Demo Day. Review the startup opportunity below, then cast your official vote.'}</p>
+        <p>${isEdit ? 'Review the startup opportunity below to update your response. Any updates will sync across all your logged-in devices in real time.' : 'A focused profile for Demo Day. Review the startup opportunity below, then submit your official response.'}</p>
         <div class="hero-visual">
-          <div style="position:absolute;left:16px;top:15px;font-size:10px;font-weight:850;color:#3656a5">STARTUP DEMO</div>
+          <div style="position:absolute;left:16px;top:15px;font-size:10px;font-weight:850;color:#3656a5">BOOTH ${s.n} • STARTUP DEMO DAY</div>
           <div style="position:absolute;left:16px;bottom:15px;right:16px" class="feature-row">
             <div class="feature">AI Technology</div>
             <div class="feature">Market Scalability</div>
@@ -1494,11 +1510,11 @@
             <span>${responseIcon(pendingChoice)}</span>
             <span>${responseLabel(pendingChoice)}</span>
           </div>
-          <p class="confirm-desc">${isEdit ? `Are you sure you want to update your vote for <strong>${s.name}</strong> to <strong>${responseLabel(pendingChoice)}</strong>? This will update across both your devices.` : `Are you sure you want to submit this response for <strong>${s.name}</strong>? Once confirmed, this response will sync to all your devices.`}</p>
+          <p class="confirm-desc">${isEdit ? `Are you sure you want to update your response for <strong>${s.name}</strong> to <strong>${responseLabel(pendingChoice)}</strong>? This will update across both your devices.` : `Are you sure you want to submit this response for <strong>${s.name}</strong>? Once confirmed, this response will sync to all your devices.`}</p>
           <div class="confirm-btn-row">
             <button class="btn-cancel-choice" data-action="cancel-choice">✕ Cancel</button>
             <button class="btn-submit-choice ${COLORS[pendingChoice]}" data-action="confirm-submit">
-              ${isEdit ? '✓ Update Vote & Sync' : '✓ Submit Response'}
+              ${isEdit ? '✓ Update Response & Sync' : '✓ Submit Response'}
             </button>
           </div>
         </div>
@@ -1519,36 +1535,61 @@
       <h2>Response Recorded!</h2>
       <p>Your response for <strong>${s.name}</strong> is safely registered.</p>
       <div class="summary">
-        <strong>${s.name}</strong>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="booth-tag">Booth ${s.n}</span>
+          <strong>${s.name}</strong>
+        </div>
         <span>${responseLabel(r?.response)}</span>
       </div>
       <button class="primary-cta" data-action="back-list">Back to Startup List →</button>
       <button class="btn-change-choice" data-action="change-vote" style="margin-top:10px;background:rgba(255,255,255,0.9);border:1px solid #cbd5e1;color:#475569;padding:11px 16px;border-radius:12px;font-size:13px;font-weight:650;width:100%;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
         <span>✏️</span>
-        <span>Change / Update Your Vote</span>
+        <span>Change / Update Your Response</span>
       </button>
     </main>${renderBottomNav('startups')}`;
   }
 
   function renderMyResponses() {
-    const rows = startups.filter(s => responseFor(s.id)).map(s => {
+    const allAnswered = startups.filter(s => responseFor(s.id));
+    const interestedList = allAnswered.filter(s => responseFor(s.id)?.response === RESPONSE.INTERESTED);
+    const exploreList = allAnswered.filter(s => responseFor(s.id)?.response === RESPONSE.EXPLORE);
+    const notInterestedList = allAnswered.filter(s => responseFor(s.id)?.response === RESPONSE.NOT_INTERESTED);
+
+    let displayList = allAnswered;
+    if (myResponseFilter === 'INTERESTED') displayList = interestedList;
+    else if (myResponseFilter === 'EXPLORE') displayList = exploreList;
+    else if (myResponseFilter === 'NOT_INTERESTED') displayList = notInterestedList;
+
+    const rows = displayList.map(s => {
       const r = responseFor(s.id);
-      return `<div class="my-response-row">
-        <div>
-          <strong>${s.n}. ${s.name}</strong>
-          <div class="detail-label">${new Date(r.recordedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+      return `<div class="my-response-row" data-startup="${s.id}" style="cursor:pointer" title="Click to view details or update response">
+        <div style="display:flex;align-items:center;gap:10px;min-width:0">
+          <span class="booth-tag">Booth ${s.n}</span>
+          <div style="min-width:0">
+            <strong style="font-size:14px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name}</strong>
+            <div class="detail-label" style="font-size:11px">${new Date(r.recordedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • Tap to edit</div>
+          </div>
         </div>
-        <span class="choice-pill ${COLORS[r.response]}">${responseLabel(r.response)}</span>
+        <span class="choice-pill ${COLORS[r.response]}">
+          <span class="choice-icon">${responseIcon(r.response)}</span>
+          ${responseLabel(r.response)}
+        </span>
       </div>`;
     }).join('');
 
     return `${renderHeader()}<main class="phone-content">
-      <div style="margin:4px 0 14px">
+      <div style="margin:4px 0 10px">
         <h1 style="font-size:26px;margin:0 0 4px">My Responses</h1>
         <div class="detail-label">Your voting history for this Demo Day event.</div>
       </div>
-      <div class="my-responses">
-        ${rows || '<div class="notice">No responses recorded yet. Select any startup to record your vote.</div>'}
+      <div class="filters" style="margin:8px 0 14px">
+        <button class="chip ${myResponseFilter === 'all' ? 'active' : ''}" data-resp-filter="all">All (${allAnswered.length})</button>
+        <button class="chip chip-interested ${myResponseFilter === 'INTERESTED' ? 'active' : ''}" data-resp-filter="INTERESTED">👍 Interested (${interestedList.length})</button>
+        <button class="chip chip-explore ${myResponseFilter === 'EXPLORE' ? 'active' : ''}" data-resp-filter="EXPLORE">? Explore More (${exploreList.length})</button>
+        <button class="chip chip-not-interested ${myResponseFilter === 'NOT_INTERESTED' ? 'active' : ''}" data-resp-filter="NOT_INTERESTED">👎 Not Interested (${notInterestedList.length})</button>
+      </div>
+      <div class="my-responses" style="display:flex;flex-direction:column;gap:8px">
+        ${rows || `<div class="notice">No responses found for this filter.</div>`}
       </div>
     </main>${renderBottomNav('responses')}`;
   }
@@ -1577,7 +1618,7 @@
     return `${renderHeader()}<main class="phone-content" style="display:flex;flex-direction:column;justify-content:center">
       <section class="hero-card" style="margin-bottom:12px;text-align:center">
         <img src="assets/logo.png" alt="AFF Logo" style="width:68px;height:68px;margin:0 auto 10px;display:block;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.08))">
-        <div class="hero-logo" style="justify-content:center">Investor Voting Hub</div>
+        <div class="hero-logo" style="justify-content:center">Investor Hub</div>
         <h2>Welcome to ${orgState.eventTitle || 'AFF Demo Day 2026'}</h2>
         <p>Passwordless voting — sign in to score all 15 startups live. Your credentials and scores are preserved safely across sessions.</p>
       </section>
@@ -1587,13 +1628,13 @@
           <div class="detail-label" style="margin-bottom:8px;font-weight:800;color:#64748b">CONTINUE AS SAVED INVESTOR</div>
           <div style="display:flex;flex-direction:column;gap:8px">
             ${saved.map(acc => `
-              <div class="saved-account-card" data-action="fast-login" data-email="${acc.email}" data-name="${acc.name}">
+              <div class="saved-account-card" data-action="fast-login" data-email="${acc.email}" data-name="${acc.name}" role="button" tabindex="0" style="cursor:pointer">
                 <div class="avatar-mini" style="width:34px;height:34px;font-size:14px;background:#e0e7ff;color:#3730a3;border-radius:50%;display:grid;place-items:center;font-weight:900;flex-shrink:0">${acc.name.charAt(0).toUpperCase()}</div>
                 <div style="flex:1;min-width:0;text-align:left">
                   <strong style="font-size:13px;display:block;color:var(--ink)">${acc.name}</strong>
                   <span style="font-size:11px;color:#64748b;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${acc.email}</span>
                 </div>
-                <button class="chip active" style="font-size:11px;padding:6px 12px">Login →</button>
+                <button class="chip active" style="font-size:11px;padding:6px 12px;pointer-events:none">Login →</button>
               </div>
             `).join('')}
           </div>
@@ -2651,15 +2692,28 @@
         }
       }
 
-      const action = e.target.closest('[data-action]')?.dataset.action;
-      if (action === 'fast-login') {
-        const card = e.target.closest('[data-action="fast-login"]');
-        const name = card?.dataset.name;
-        const email = card?.dataset.email;
+      const savedCard = e.target.closest('.saved-account-card, [data-action="fast-login"]');
+      if (savedCard) {
+        const name = savedCard.dataset.name;
+        const email = savedCard.dataset.email;
+        const nameInput = document.getElementById('join-name');
+        const emailInput = document.getElementById('join-email');
+        if (nameInput && name) nameInput.value = name;
+        if (emailInput && email) emailInput.value = email;
         if (name && email) {
           performLogin(name, email);
+          return;
         }
       }
+
+      const respFilterBtn = e.target.closest('[data-resp-filter]');
+      if (respFilterBtn) {
+        myResponseFilter = respFilterBtn.dataset.respFilter;
+        renderInvestor();
+        return;
+      }
+
+      const action = e.target.closest('[data-action]')?.dataset.action;
       if (action === 'join') joinEvent();
       if (action === 'back-list') backToList();
       if (action === 'change-vote') {
