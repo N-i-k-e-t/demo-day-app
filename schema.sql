@@ -33,6 +33,10 @@ create table if not exists demo_investors (
   joined_at timestamptz not null default now()
 );
 
+-- Migrations for existing tables: ensure all columns exist
+alter table demo_investors add column if not exists session_token text;
+alter table demo_investors add column if not exists last_active timestamptz default now();
+
 -- 3. Investor Responses (Immutable, strictly idempotent, 1 per investor per startup)
 create table if not exists demo_responses (
   id bigint generated always as identity primary key,
@@ -43,6 +47,9 @@ create table if not exists demo_responses (
   recorded_at timestamptz not null default now(),
   idempotency_key text not null unique
 );
+
+alter table demo_responses add column if not exists startup_name text;
+alter table demo_responses add column if not exists idempotency_key text;
 
 -- 4. Admin Actions Log
 create table if not exists demo_admin_actions (
@@ -64,6 +71,9 @@ create table if not exists demo_event_state (
   published_data jsonb default '{}'::jsonb,
   updated_at timestamptz not null default now()
 );
+
+alter table demo_event_state add column if not exists stage_status text default 'STANDBY';
+alter table demo_event_state add column if not exists published_data jsonb default '{}'::jsonb;
 
 -- Initialize the single event state row
 insert into demo_event_state (id) values (1) on conflict (id) do nothing;
