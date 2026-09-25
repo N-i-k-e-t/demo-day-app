@@ -1276,7 +1276,7 @@
     const currentStartup = startups[state.pitch - 1] || startups[0];
 
     // Live Metrics: Derived from Supabase data + local fallback (Clean 0 initial state, zero dummy defaults)
-    const totalInvestors = adminLiveStats.investors.length || Object.keys(state.responseByInvestor).length || (session ? 1 : 0);
+    const totalInvestors = adminLiveStats.investors.length || Object.keys(state.responseByInvestor).length;
     const totalResponsesCount = adminLiveStats.responses.length || Object.values(state.responseByInvestor).reduce((acc, cur) => acc + Object.keys(cur || {}).length, 0);
 
     // Current Pitch Submission Stats
@@ -1314,10 +1314,10 @@
         </div>
 
         <div class="live-completion-stats">
-          <div class="live-completion-num">${currentSubmittedCount} <span style="font-size:20px;font-weight:600;color:#94a3b8">/ ${totalInvestors}</span></div>
+          <div class="live-completion-num">${currentSubmittedCount > 0 ? currentSubmittedCount : '0'} <span style="font-size:20px;font-weight:600;color:#94a3b8">/ ${totalInvestors > 0 ? totalInvestors : '0'}</span></div>
           <div class="live-completion-desc">
-            <strong>${totalInvestors > 0 ? `${currentCompletionPct}% of registered investors have submitted` : 'No registered investors yet (0 joined)'}</strong>
-            <span>${totalInvestors > 0 ? (currentPending > 0 ? `${currentPending} investors still pending for this pitch` : 'All registered investors have submitted!') : 'Ready for live investor voting'}</span>
+            <strong>${currentSubmittedCount > 0 ? `${currentCompletionPct}% of registered investors have submitted` : 'No submissions recorded yet for this pitch'}</strong>
+            <span>${totalInvestors > 0 ? (currentPending > 0 ? `${currentPending} investors still pending for this pitch` : 'All registered investors have submitted!') : 'Awaiting live investor participation'}</span>
           </div>
         </div>
 
@@ -1326,10 +1326,14 @@
         </div>
 
         <div class="live-chips-row">
-          <span class="live-stat-chip green">👍 ${currentInterested} Interested</span>
-          <span class="live-stat-chip yellow">? ${currentExplore} Explore More</span>
-          <span class="live-stat-chip blue">👎 ${currentNotInterested} Not Interested</span>
-          <span class="live-stat-chip gray">⏳ ${currentPending} Pending</span>
+          ${currentSubmittedCount > 0 ? `
+            <span class="live-stat-chip green">👍 ${currentInterested} Interested</span>
+            <span class="live-stat-chip yellow">? ${currentExplore} Explore More</span>
+            <span class="live-stat-chip blue">👎 ${currentNotInterested} Not Interested</span>
+            <span class="live-stat-chip gray">⏳ ${currentPending} Pending</span>
+          ` : `
+            <span class="live-stat-chip gray" style="font-weight:600;padding:4px 10px">— No live responses submitted yet for pitch ${state.pitch} —</span>
+          `}
         </div>
       </section>
 
@@ -1424,6 +1428,7 @@
                   ? adminLiveStats.responses.filter(r => r.startup_id === s.id)
                   : Object.values(state.responseByInvestor).map(b => b[s.id]).filter(Boolean);
                 const count = sResps.length;
+                const hasVotes = count > 0;
                 const pct = totalInvestors > 0 ? Math.round((count / totalInvestors) * 100) : 0;
                 const iCount = sResps.filter(r => (r.response_type || r.response) === RESPONSE.INTERESTED).length;
                 const eCount = sResps.filter(r => (r.response_type || r.response) === RESPONSE.EXPLORE).length;
@@ -1434,17 +1439,21 @@
                 return `<tr>
                   <td><strong>${s.n}</strong></td>
                   <td><strong>${s.name}</strong><br><small style="color:#64748b">${s.sub}</small></td>
-                  <td><strong>${count}</strong> / ${totalInvestors}</td>
+                  <td>${hasVotes ? `<strong>${count}</strong> / ${totalInvestors}` : '<span style="color:#94a3b8;font-size:11px">—</span>'}</td>
                   <td>
-                    <div class="mini-prog">
-                      <div class="mini-prog-bar"><div class="mini-prog-fill" style="width:${pct}%"></div></div>
-                      <span>${pct}%</span>
-                    </div>
+                    ${hasVotes ? `
+                      <div class="mini-prog">
+                        <div class="mini-prog-bar"><div class="mini-prog-fill" style="width:${pct}%"></div></div>
+                        <span>${pct}%</span>
+                      </div>
+                    ` : '<span style="color:#94a3b8;font-size:11px">—</span>'}
                   </td>
                   <td>
-                    <span style="color:#10b981;font-weight:750">👍 ${iCount}</span> &nbsp;
-                    <span style="color:#f59e0b;font-weight:750">? ${eCount}</span> &nbsp;
-                    <span style="color:#3b82f6;font-weight:750">👎 ${nCount}</span>
+                    ${hasVotes ? `
+                      <span style="color:#10b981;font-weight:750">👍 ${iCount}</span> &nbsp;
+                      <span style="color:#f59e0b;font-weight:750">? ${eCount}</span> &nbsp;
+                      <span style="color:#3b82f6;font-weight:750">👎 ${nCount}</span>
+                    ` : '<span style="color:#94a3b8;font-size:11px">—</span>'}
                   </td>
                   <td><span class="live-stat-chip ${statusColor}" style="padding:2px 8px;font-size:10px">${status}</span></td>
                 </tr>`;
@@ -1489,6 +1498,7 @@
                   const respsToCount = invResps.length > 0 ? invResps : localResps;
 
                   const count = respsToCount.length;
+                  const hasUserVotes = count > 0;
                   const pct = Math.round((count / TOTAL_PITCHES) * 100);
                   const badgeClass = count === TOTAL_PITCHES ? 'complete' : count > 0 ? 'progress' : 'pending';
                   const badgeLabel = count === TOTAL_PITCHES ? 'All 15 Completed' : count > 0 ? 'In Progress' : 'No Votes Yet';
@@ -1510,15 +1520,19 @@
                     <td><strong>${inv.full_name}</strong> &nbsp; ${connBadge}</td>
                     <td style="color:#64748b">${inv.email}</td>
                     <td>
-                      <div class="mini-prog">
-                        <div class="mini-prog-bar"><div class="mini-prog-fill" style="width:${pct}%"></div></div>
-                        <span><strong>${count}</strong> / ${TOTAL_PITCHES}</span>
-                      </div>
+                      ${hasUserVotes ? `
+                        <div class="mini-prog">
+                          <div class="mini-prog-bar"><div class="mini-prog-fill" style="width:${pct}%"></div></div>
+                          <span><strong>${count}</strong> / ${TOTAL_PITCHES}</span>
+                        </div>
+                      ` : '<span style="color:#94a3b8;font-size:11px">—</span>'}
                     </td>
                     <td>
-                      <span style="color:#10b981;font-weight:800">👍 ${userInterested}</span> &nbsp;
-                      <span style="color:#f59e0b;font-weight:800">? ${userExplore}</span> &nbsp;
-                      <span style="color:#3b82f6;font-weight:800">👎 ${userNotInterested}</span>
+                      ${hasUserVotes ? `
+                        <span style="color:#10b981;font-weight:800">👍 ${userInterested}</span> &nbsp;
+                        <span style="color:#f59e0b;font-weight:800">? ${userExplore}</span> &nbsp;
+                        <span style="color:#3b82f6;font-weight:800">👎 ${userNotInterested}</span>
+                      ` : '<span style="color:#94a3b8;font-size:11px">—</span>'}
                     </td>
                     <td style="color:#64748b;font-size:10px">${new Date(inv.joined_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
                     <td><span class="roster-badge ${badgeClass}">${badgeLabel}</span></td>
