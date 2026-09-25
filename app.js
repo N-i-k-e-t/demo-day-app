@@ -1015,7 +1015,7 @@
         <strong>🔒 Immutable & Offline-Resilient</strong>
         Your response is saved instantly to your device and synchronized to the cloud. It cannot be altered after submission.
       </div>
-    </main>`;
+    </main>${renderBottomNav('startups')}`;
   }
 
   function renderConfirmationScreen() {
@@ -1030,7 +1030,7 @@
         <span>${responseLabel(r?.response)}</span>
       </div>
       <button class="primary-cta" data-action="back-list">Back to Startup List →</button>
-    </main>`;
+    </main>${renderBottomNav('startups')}`;
   }
 
   function renderMyResponses() {
@@ -1418,12 +1418,180 @@
   }
 
   /* ══════════════════════════════════════════════════════════════
+     ORGANISATION PORTAL (Top Layer Landing Page & Event Generator)
+     ══════════════════════════════════════════════════════════════ */
+  const ORG_STORAGE_KEY = 'startup-demo-org-v2';
+
+  function slugify(text) {
+    return (text || '').toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, '') || 'aff-2026';
+  }
+
+  function loadOrgState() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(ORG_STORAGE_KEY));
+      if (saved) return saved;
+    } catch (e) {
+      console.warn('[Org] State load note:', e);
+    }
+    return {
+      name: 'Asian Founders Fund (AFF)',
+      leadEmail: 'organizer@asianfoundersfund.com',
+      eventTitle: 'AFF Demo Day 2026',
+      passcode: 'thatAff2026@',
+      slug: 'aff-2026'
+    };
+  }
+
+  function saveOrgState() {
+    try {
+      localStorage.setItem(ORG_STORAGE_KEY, JSON.stringify(orgState));
+    } catch (err) {
+      console.warn('[Org] Save warning:', err);
+    }
+  }
+
+  let orgState = loadOrgState();
+
+  function renderOrgPortal() {
+    const root = document.getElementById('org-root');
+    if (!root) return;
+
+    const baseURL = window.location.origin + window.location.pathname;
+    const eventSlug = orgState.slug || slugify(orgState.eventTitle);
+    const investorURL = `${baseURL}?event=${eventSlug}#investor`;
+    const stageURL = `${baseURL}?event=${eventSlug}#stage`;
+    const adminURL = `${baseURL}?event=${eventSlug}#admin`;
+
+    root.innerHTML = `
+      <div class="org-landing-wrap">
+        <!-- Hero Banner -->
+        <section class="org-hero-banner">
+          <span class="org-badge"><i></i> ENTERPRISE DEMO DAY OPERATING SYSTEM</span>
+          <h1>Empower Your Demo Day with 1,000+ Real-Time Investor Interactions</h1>
+          <p>
+            The production-grade pitch platform engineered for venture capital funds, accelerators, and demo days.
+            Instant passwordless voter verification, zero-data-loss offline sync, and real-time stage visualization.
+          </p>
+          <div class="org-actions-row">
+            <button class="btn-org-primary" data-route="investor">🚀 Launch Active Event (AFF 2026)</button>
+            <button class="btn-org-secondary" data-action="scroll-create-org">🏢 Register Organisation & Generate Link</button>
+            <button class="btn-org-secondary" data-action="org-admin-login">🔒 Organiser Admin Access</button>
+          </div>
+        </section>
+
+        <!-- Active Default Event Showcase Card (AFF Demo Day 2026) -->
+        <section class="org-event-card">
+          <div class="org-event-header">
+            <div class="org-event-title">
+              <span class="eyebrow" style="color:#2563eb">DEFAULT ACTIVE EVENT</span>
+              <h2>${orgState.eventTitle || 'AFF Demo Day 2026'}</h2>
+              <p>Hosted by <strong>${orgState.name || 'Asian Founders Fund (AFF)'}</strong> • 15 Pre-Configured Startups • Live Voting Ready</p>
+            </div>
+            <div class="org-event-badges">
+              <span class="net-badge online"><i></i> Live Event Active</span>
+              <span class="live-stat-chip blue">15 Tech Startups</span>
+              <span class="live-stat-chip green">1,000+ Capacity</span>
+            </div>
+          </div>
+
+          <div style="margin-top:18px">
+            <h4 style="margin:0 0 4px;font-size:14px;color:var(--ink)">Generated Shareable Event Links</h4>
+            <p class="detail-label" style="margin-bottom:14px">Share these direct links with your audience. Investors join passwordlessly with zero setup.</p>
+
+            <div class="link-gen-container">
+              <div class="link-gen-row">
+                <span class="link-gen-title">📱 <strong>Investor Voting App</strong></span>
+                <input id="link-investor" class="link-gen-url" value="${investorURL}" readonly>
+                <button class="btn-copy-link" data-copy-link="link-investor">📋 Copy Link</button>
+                <button class="btn-open-link" data-route="investor">Open App →</button>
+              </div>
+
+              <div class="link-gen-row">
+                <span class="link-gen-title">📺 <strong>Main Stage Display</strong></span>
+                <input id="link-stage" class="link-gen-url" value="${stageURL}" readonly>
+                <button class="btn-copy-link" data-copy-link="link-stage">📋 Copy Link</button>
+                <button class="btn-open-link" data-route="stage">Open Stage →</button>
+              </div>
+
+              <div class="link-gen-row">
+                <span class="link-gen-title">🔒 <strong>Organiser Command Center</strong></span>
+                <input id="link-admin" class="link-gen-url" value="${adminURL}" readonly>
+                <button class="btn-copy-link" data-copy-link="link-admin">📋 Copy Link</button>
+                <button class="btn-open-link" data-action="org-admin-login">Admin Login 🔒</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Organisation Registration & Event Creator -->
+        <section id="org-create-section" class="org-event-card">
+          <div class="org-event-header">
+            <div class="org-event-title">
+              <span class="eyebrow" style="color:#7c3aed">ORGANISATION ONBOARDING</span>
+              <h2>Register Your Organisation & Generate Custom Event Link</h2>
+              <p>Create branded event links for your venture firm, accelerator cohort, or syndicate demo day.</p>
+            </div>
+          </div>
+
+          <div class="org-form-grid">
+            <div class="org-input-group">
+              <label>Organisation Name</label>
+              <input id="org-input-name" class="input" placeholder="e.g. Asian Founders Fund (AFF)" value="${orgState.name}">
+            </div>
+            <div class="org-input-group">
+              <label>Lead Organiser Email</label>
+              <input id="org-input-email" class="input" type="email" placeholder="e.g. partner@asianfoundersfund.com" value="${orgState.leadEmail}">
+            </div>
+            <div class="org-input-group">
+              <label>Demo Day Event Title</label>
+              <input id="org-input-event" class="input" placeholder="e.g. AFF Demo Day 2026" value="${orgState.eventTitle}">
+            </div>
+            <div class="org-input-group">
+              <label>Admin Passcode</label>
+              <input id="org-input-passcode" class="input" placeholder="e.g. thatAff2026@" value="${orgState.passcode}">
+            </div>
+          </div>
+
+          <div style="margin-top:20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+            <button class="btn-org-primary" data-action="create-org-event">✨ Generate Custom Event Links</button>
+            <span class="detail-label">Instant link generation • Cloud database synchronized • Production secure</span>
+          </div>
+        </section>
+
+        <!-- Feature Grid -->
+        <div class="org-feature-grid">
+          <div class="org-feature-card">
+            <div class="org-feature-icon">⚡</div>
+            <h3>1,000+ Concurrency</h3>
+            <p>Optimistic 0ms local storage recording and idempotent cloud upserts prevent server bottlenecks.</p>
+          </div>
+          <div class="org-feature-card">
+            <div class="org-feature-icon">🔑</div>
+            <h3>Passwordless Voting</h3>
+            <p>Investors enter name & email for immediate cryptographic access with cloud session restore.</p>
+          </div>
+          <div class="org-feature-card">
+            <div class="org-feature-icon">📶</div>
+            <h3>Zero-Data-Loss Outbox</h3>
+            <p>Votes are preserved in a persistent queue and auto-synced the moment cellular or Wi-Fi reconnects.</p>
+          </div>
+          <div class="org-feature-card">
+            <div class="org-feature-icon">🛡️</div>
+            <h3>Stage Isolation</h3>
+            <p>Individual investor votes remain strictly confidential. Only approved aggregated stats are published.</p>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /* ══════════════════════════════════════════════════════════════
      ROUTING & NAVIGATION
      ══════════════════════════════════════════════════════════════ */
   function getRouteFromURL() {
     const hash = window.location.hash.replace('#', '').toLowerCase();
-    if (['investor', 'admin', 'stage', 'references'].includes(hash)) return hash;
-    return 'investor';
+    if (['org', 'investor', 'admin', 'stage', 'references'].includes(hash)) return hash;
+    return 'org'; // Default to Organisation Portal
   }
 
   function setRoute(next) {
@@ -1433,11 +1601,16 @@
     }
     route = next;
     window.location.hash = next;
+    document.body.className = `route-${next}`;
+
+    const titleEl = document.getElementById('investor-event-title');
+    if (titleEl) titleEl.textContent = orgState.eventTitle || 'AFF Demo Day 2026';
 
     document.querySelectorAll('.route-view').forEach(v => v.classList.remove('active'));
     document.getElementById(`view-${next}`)?.classList.add('active');
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.route === next));
 
+    if (next === 'org') renderOrgPortal();
     if (next === 'investor') renderInvestor();
     if (next === 'admin') {
       fetchAdminLiveData();
@@ -1555,10 +1728,79 @@
       const response = e.target.closest('[data-response]');
       if (response) submitResponse(response.dataset.response);
 
+      // Copy link buttons
+      const copyBtn = e.target.closest('[data-copy-link]');
+      if (copyBtn) {
+        const targetId = copyBtn.dataset.copyLink;
+        const inputEl = document.getElementById(targetId);
+        if (inputEl) {
+          const val = inputEl.value || inputEl.textContent;
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(val).then(() => {
+              toast('✓ Link copied to clipboard!');
+            }).catch(() => {
+              toast(`Copied: ${val}`);
+            });
+          } else {
+            inputEl.select?.();
+            document.execCommand?.('copy');
+            toast('✓ Link copied to clipboard!');
+          }
+        }
+      }
+
       const action = e.target.closest('[data-action]')?.dataset.action;
       if (action === 'join') joinEvent();
       if (action === 'back-list') backToList();
       if (action === 'switch-account') switchInvestorAccount();
+      if (action === 'org-admin-login') showAdminLock();
+      if (action === 'scroll-create-org') {
+        const sec = document.getElementById('org-create-section');
+        if (sec) sec.scrollIntoView({ behavior: 'smooth' });
+      }
+
+      if (action === 'create-org-event') {
+        const orgName = document.getElementById('org-input-name')?.value.trim() || 'Asian Founders Fund (AFF)';
+        const orgEmail = document.getElementById('org-input-email')?.value.trim() || 'organizer@asianfoundersfund.com';
+        const eventTitle = document.getElementById('org-input-event')?.value.trim() || 'AFF Demo Day 2026';
+        const passcode = document.getElementById('org-input-passcode')?.value.trim() || 'thatAff2026@';
+        const slug = slugify(eventTitle);
+
+        orgState.name = orgName;
+        orgState.leadEmail = orgEmail;
+        orgState.eventTitle = eventTitle;
+        orgState.passcode = passcode;
+        orgState.slug = slug;
+        saveOrgState();
+
+        const baseURL = window.location.origin + window.location.pathname;
+        const invUrl = `${baseURL}?event=${slug}#investor`;
+        const admUrl = `${baseURL}?event=${slug}#admin`;
+        const stgUrl = `${baseURL}?event=${slug}#stage`;
+
+        if (supabase) {
+          supabase.from('demo_organisations').upsert({
+            org_id: 'org_' + slug,
+            org_name: orgName,
+            lead_name: orgName + ' Lead',
+            lead_email: orgEmail,
+            event_title: eventTitle,
+            passcode: passcode,
+            investor_url: invUrl,
+            admin_url: admUrl,
+            stage_url: stgUrl
+          }, { onConflict: 'org_id' }).then(() => {}).catch(err => console.warn('[Org] Save error:', err));
+        }
+
+        recordFeed('ORGANISATION_REGISTERED', {
+          actorName: orgName,
+          actorEmail: orgEmail,
+          detail: `Organisation registered: ${orgName} — Event: ${eventTitle} (Slug: ${slug})`
+        });
+
+        renderOrgPortal();
+        toast(`✓ Event created for ${orgName}! Custom links ready.`);
+      }
 
       const tab = e.target.closest('[data-nav]')?.dataset.nav;
       if (tab === 'list') {
@@ -1578,7 +1820,7 @@
     document.getElementById('admin-passcode-submit')?.addEventListener('click', attemptAdminUnlock);
     document.getElementById('admin-passcode-cancel')?.addEventListener('click', () => {
       hideAdminLock();
-      setRoute('investor');
+      setRoute('org');
     });
     document.getElementById('admin-passcode')?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') attemptAdminUnlock();
@@ -1591,6 +1833,7 @@
   }
 
   function renderAll() {
+    if (route === 'org') renderOrgPortal();
     if (route === 'investor') renderInvestor();
     if (route === 'admin') renderAdmin();
     if (route === 'stage') renderStage();

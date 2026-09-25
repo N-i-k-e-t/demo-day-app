@@ -17,29 +17,51 @@
   <div id="app" class="app-shell">
     <div class="desktop-shell">
       <aside class="desktop-nav">
-        <div class="brand-lockup"><div class="brand-mark">✦</div><div><strong>Startup Demo</strong><span>Live Pitch System</span></div></div>
-        <button data-route="investor" class="nav-btn active">Investor</button>
-        <button data-route="admin" class="nav-btn">Admin</button>
-        <button data-route="stage" class="nav-btn">Stage</button>
-        <button data-route="references" class="nav-btn">UI References</button>
-        <div class="desktop-nav-foot"><small>Demo build • immutable responses</small></div>
+        <div class="brand-lockup"><div class="brand-mark">✦</div><div><strong>AFF DemoDay</strong><span>Live Pitch OS</span></div></div>
+        <button data-route="org" class="nav-btn active">🏛️ Organisation Portal</button>
+        <button data-route="investor" class="nav-btn">📱 Investor Experience</button>
+        <button data-route="stage" class="nav-btn">📺 Main Stage</button>
+        <button data-route="references" class="nav-btn">🖼️ UI References</button>
+        <div class="admin-nav-item" style="margin-top:auto;padding-top:14px;border-top:1px solid rgba(255,255,255,0.1)">
+          <button data-route="admin" class="nav-btn" style="opacity:0.75;font-size:12px">🔒 Organiser Admin</button>
+        </div>
+        <div class="desktop-nav-foot"><small>AFF 2026 • 1000+ Concurrent Scale</small></div>
       </aside>
 
       <main class="desktop-main">
-        <section id="view-investor" class="route-view active">
-          <div class="desktop-toolbar"><div><span class="eyebrow">INVESTOR EXPERIENCE</span><h1>Startup Demo</h1></div><div class="toolbar-actions"><span id="investor-network" class="net-badge online"><i></i> Online</span><button class="icon-btn" data-action="open-menu" aria-label="Menu">☰</button></div></div>
+        <section id="view-org" class="route-view active">
+          <div class="desktop-toolbar">
+            <div><span class="eyebrow">ENTERPRISE PLATFORM</span><h1>Organisation Portal</h1></div>
+            <div class="toolbar-actions"><span class="net-badge online"><i></i> High-Concurrency Engine</span></div>
+          </div>
+          <div id="org-root"></div>
+        </section>
+
+        <section id="view-investor" class="route-view">
+          <div class="desktop-toolbar">
+            <div><span class="eyebrow">INVESTOR EXPERIENCE</span><h1 id="investor-event-title">AFF Demo Day 2026</h1></div>
+            <div class="toolbar-actions">
+              <span id="investor-network" class="net-badge online"><i></i> Online</span>
+            </div>
+          </div>
           <div class="investor-demo-wrap">
             <div class="device-frame"><div id="phone-root" class="phone-root"></div></div>
           </div>
         </section>
 
         <section id="view-admin" class="route-view">
-          <div class="desktop-toolbar"><div><span class="eyebrow">EVENT CONTROL</span><h1>Admin Command Center</h1></div><div class="toolbar-actions"><span id="admin-network" class="net-badge online"><i></i> Online • Cloud Live</span></div></div>
+          <div class="desktop-toolbar">
+            <div><span class="eyebrow">EVENT CONTROL</span><h1>Admin Command Center</h1></div>
+            <div class="toolbar-actions"><span id="admin-network" class="net-badge online"><i></i> Online • Cloud Live</span></div>
+          </div>
           <div id="admin-root"></div>
         </section>
 
         <section id="view-stage" class="route-view">
-          <div class="desktop-toolbar"><div><span class="eyebrow">PUBLIC DISPLAY</span><h1>Main Stage</h1></div><div class="toolbar-actions"><span class="stage-only-note">No individual investor responses are shown live.</span></div></div>
+          <div class="desktop-toolbar">
+            <div><span class="eyebrow">PUBLIC DISPLAY</span><h1>Main Stage</h1></div>
+            <div class="toolbar-actions"><span class="stage-only-note">No individual investor responses are shown live.</span></div>
+          </div>
           <div id="stage-root"></div>
         </section>
 

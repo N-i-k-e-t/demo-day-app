@@ -87,6 +87,30 @@ create index if not exists idx_responses_startup_response on demo_responses(star
 create index if not exists idx_responses_recorded on demo_responses(recorded_at desc);
 create unique index if not exists idx_responses_investor_startup on demo_responses(investor_key, startup_id);
 
+-- 6. Organisations & Event Link Configurations
+create table if not exists demo_organisations (
+  id bigint generated always as identity primary key,
+  org_id text not null unique,
+  org_name text not null,
+  lead_name text not null,
+  lead_email text not null,
+  event_title text not null default 'AFF Demo Day 2026',
+  passcode text not null default 'thatAff2026@',
+  investor_url text,
+  admin_url text,
+  stage_url text,
+  metadata jsonb default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+-- Insert default AFF organisation entry
+insert into demo_organisations (org_id, org_name, lead_name, lead_email, event_title, passcode)
+values ('org_aff_2026', 'Asian Founders Fund (AFF)', 'AFF Partner', 'organizer@asianfoundersfund.com', 'AFF Demo Day 2026', 'thatAff2026@')
+on conflict (org_id) do nothing;
+
+create index if not exists idx_org_id on demo_organisations(org_id);
+create index if not exists idx_org_email on demo_organisations(lead_email);
+
 -- ============================================================
 -- Row Level Security (RLS) - Production-Safe Permissive Demo Policies
 -- ============================================================
@@ -95,6 +119,7 @@ alter table demo_investors enable row level security;
 alter table demo_responses enable row level security;
 alter table demo_admin_actions enable row level security;
 alter table demo_event_state enable row level security;
+alter table demo_organisations enable row level security;
 
 -- Policies: Allow anon client reading and inserting/upserting
 drop policy if exists "Allow all on interaction_feed" on interaction_feed;
@@ -112,6 +137,9 @@ create policy "Allow all on demo_admin_actions" on demo_admin_actions for all us
 drop policy if exists "Allow all on demo_event_state" on demo_event_state;
 create policy "Allow all on demo_event_state" on demo_event_state for all using (true) with check (true);
 
+drop policy if exists "Allow all on demo_organisations" on demo_organisations;
+create policy "Allow all on demo_organisations" on demo_organisations for all using (true) with check (true);
+
 -- ============================================================
 -- Supabase Realtime Replication Enablement
 -- ============================================================
@@ -125,6 +153,9 @@ begin
   end if;
   if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'demo_event_state') then
     alter publication supabase_realtime add table demo_event_state;
+  end if;
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'demo_organisations') then
+    alter publication supabase_realtime add table demo_organisations;
   end if;
 exception
   when others then null;
