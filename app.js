@@ -9,9 +9,11 @@
   const SUPABASE_ANON_KEY = cfg.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRvdWNnd2RhbGd0a2NmaGVidmdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyNzIzNzQsImV4cCI6MjEwNTg0ODM3NH0.YOpoQ6lzRgeicJvsiC4Zun78jvYtW7_TzCFosaG0HZQ';
 
   let supabase = null;
+  let realtimeChannel = null;
   try {
-    if (window.supabase && window.supabase.createClient) {
-      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    const supaLib = (typeof window !== 'undefined' && window.supabase) || (typeof supabase !== 'undefined' ? supabase : null);
+    if (supaLib && supaLib.createClient) {
+      supabase = supaLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
         realtime: { params: { eventsPerSecond: 20 } }
       });
       console.log('[Supabase] Connected to:', SUPABASE_URL);
@@ -84,6 +86,8 @@
   let startupFilter = 'all';
   let toastTimer = null;
   let pendingChoice = null;
+  let isEditingVote = false;
+  const myInvestorKeys = new Set(session?.id ? [session.id] : []);
 
   // Live Admin Data (Maintained live via Supabase Realtime + smart polling)
   let adminLiveStats = {
@@ -505,22 +509,31 @@
     // 1. Safe Multi-Login Check: query Supabase if this email was already registered
     if (supabase) {
       try {
-        const { data: existingUser } = await supabase
+        const { data: existingUsers } = await supabase
           .from('demo_investors')
           .select('investor_key, full_name, email')
-          .eq('email', cleanEmail)
-          .maybeSingle();
+          .ilike('email', cleanEmail)
+          .order('joined_at', { ascending: false });
 
-        if (existingUser?.investor_key) {
-          investorKey = existingUser.investor_key;
-          if (!displayName && existingUser.full_name) {
-            displayName = existingUser.full_name;
+        if (existingUsers && existingUsers.length > 0) {
+          existingUsers.forEach(u => {
+            if (u.investor_key) myInvestorKeys.add(u.investor_key);
+          });
+          const existingUser = existingUsers[0];
+          if (existingUser?.investor_key) {
+            investorKey = existingUser.investor_key;
+            if (!displayName && existingUser.full_name) {
+              displayName = existingUser.full_name;
+            }
           }
         }
       } catch (err) {
         console.warn('[Login] Existing user lookup note:', err);
       }
     }
+
+    myInvestorKeys.add(investorKey);
+    myInvestorKeys.add(makeInvestorKey(cleanEmail));
 
     session = {
       id: investorKey,
@@ -538,7 +551,6 @@
     }
 
     audit('INVESTOR_JOINED', `${displayName} (${cleanEmail}) signed in`, 'SYSTEM');
-    broadcast();
     investorScreen = 'list';
     renderAll();
 
@@ -561,10 +573,10 @@
       detail: `${displayName} logged in (${cleanEmail})`
     });
 
-    // 2. Safely restore all previous votes from Supabase (prevents overrides!)
-    const restored = await restoreResponsesFromSupabase(investorKey);
+    // 2. Safely restore all previous votes from Supabase across all devices!
+    const restored = await restoreResponsesFromSupabase(investorKey, cleanEmail);
     if (restored > 0) {
-      toast(`✓ Welcome back, ${displayName}! Restored ${restored} previous votes.`);
+      toast(`✓ Welcome back, ${displayName}! Synced ${restored} previous votes from your devices.`);
     } else {
       toast(`✓ Welcome, ${displayName} — Ready to cast your live votes.`);
     }
@@ -599,29 +611,68 @@
     }
   }
 
-  async function restoreResponsesFromSupabase(targetKey) {
+  async function restoreResponsesFromSupabase(targetKey, targetEmail) {
     const key = targetKey || session?.id;
-    if (!supabase || !key) return 0;
+    const email = (targetEmail || session?.email || '').trim().toLowerCase();
+    if (!supabase || (!key && !email)) return 0;
     try {
-      const { data, error } = await supabase
+      // 1. Gather all investor_keys associated with this email or targetKey
+      const keysToQuery = [key].filter(Boolean);
+      if (key) myInvestorKeys.add(key);
+      if (email) {
+        try {
+          const { data: matchedUsers } = await supabase
+            .from('demo_investors')
+            .select('investor_key')
+            .ilike('email', email);
+          if (matchedUsers && matchedUsers.length > 0) {
+            matchedUsers.forEach(u => {
+              if (u.investor_key) {
+                myInvestorKeys.add(u.investor_key);
+                if (!keysToQuery.includes(u.investor_key)) {
+                  keysToQuery.push(u.investor_key);
+                }
+              }
+            });
+          }
+        } catch (err) {
+          console.warn('[Sync] User keys query notice:', err);
+        }
+      }
+
+      // 2. Query demo_responses using actual valid columns in Supabase
+      let query = supabase
         .from('demo_responses')
-        .select('startup_id, startup_name, response_type, recorded_at, idempotency_key')
-        .eq('investor_key', key);
+        .select('startup_id, startup_name, response_type, recorded_at, idempotency_key, investor_key');
+
+      if (keysToQuery.length === 1) {
+        query = query.eq('investor_key', keysToQuery[0]);
+      } else if (keysToQuery.length > 1) {
+        query = query.in('investor_key', keysToQuery);
+      } else {
+        return 0;
+      }
+
+      const { data, error } = await query;
 
       if (!error && data && data.length > 0) {
         const bucket = state.responseByInvestor[key] || (state.responseByInvestor[key] = {});
         let newRestored = 0;
         data.forEach(r => {
-          if (!bucket[r.startup_id]) {
+          const existing = bucket[r.startup_id];
+          const hasChanged = !existing || existing.response !== r.response_type;
+
+          if (hasChanged) {
             bucket[r.startup_id] = {
               response: r.response_type,
               startupId: r.startup_id,
-              startupName: r.startup_name || '',
+              startupNumber: startups.find(s => s.id === r.startup_id)?.n || parseInt((r.startup_id || '').replace(/\D/g, ''), 10) || 1,
+              startupName: r.startup_name || existing?.startupName || (startups.find(s => s.id === r.startup_id)?.name || r.startup_id),
               investorKey: key,
               investorName: session?.name || 'Registered Investor',
-              investorEmail: session?.email || '',
-              recordedAt: r.recorded_at,
-              idempotencyKey: r.idempotency_key
+              investorEmail: session?.email || email,
+              recordedAt: r.recorded_at || existing?.recordedAt || new Date().toISOString(),
+              idempotencyKey: r.idempotency_key || existing?.idempotencyKey || `${key}:${r.startup_id}`
             };
             newRestored++;
           }
@@ -629,7 +680,7 @@
         if (newRestored > 0) {
           saveState();
           renderAll();
-          console.log(`[Session] Restored ${newRestored} previous responses from cloud.`);
+          console.log(`[Session] Restored/Synced ${newRestored} responses from cloud across devices for ${email || key}.`);
         }
         return data.length;
       }
@@ -668,18 +719,32 @@
     }
   }
 
+  // Periodic background multi-device sync for active investor session (every 8 seconds)
   setInterval(() => {
-    if (session?.id && navigator.onLine) {
+    if (session?.id && navigator.onLine && (typeof document === 'undefined' || document.visibilityState === 'visible')) {
       sendInvestorHeartbeat();
+      restoreResponsesFromSupabase(session.id, session.email);
     }
-  }, 25000);
+  }, 8000);
 
   if (typeof window !== 'undefined') {
-    window.addEventListener('focus', () => {
+    const handleDeviceSyncOnWake = () => {
       if (session?.id && navigator.onLine) {
         sendInvestorHeartbeat();
+        restoreResponsesFromSupabase(session.id, session.email);
+      }
+      if (route === 'admin' && adminUnlocked && navigator.onLine) {
+        fetchAdminLiveData();
+      }
+    };
+
+    window.addEventListener('focus', handleDeviceSyncOnWake);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        handleDeviceSyncOnWake();
       }
     });
+    window.addEventListener('pageshow', handleDeviceSyncOnWake);
   }
 
   /* ══════════════════════════════════════════════════════════════
@@ -813,52 +878,169 @@
   }, 3500 + Math.random() * 1000);
 
   /* ══════════════════════════════════════════════════════════════
-     SUPABASE REALTIME SUBSCRIPTIONS (Live Score & Interaction Streams)
+     SUPABASE REALTIME SUBSCRIPTIONS & MULTI-DEVICE VOTE SYNC
      ══════════════════════════════════════════════════════════════ */
+  function handleIncomingVote(vote) {
+    if (!vote) return;
+    const invKey = vote.investorKey || vote.investor_key;
+    const invName = vote.investorName || vote.investor_name || 'Investor';
+    const invEmail = (vote.investorEmail || vote.investor_email || '').trim().toLowerCase();
+    const startupId = vote.startupId || vote.startup_id;
+    const respType = vote.response || vote.response_type;
+    const startupName = vote.startupName || vote.startup_name || (startups.find(s => s.id === startupId)?.name || startupId);
+    const recordedAt = vote.recordedAt || vote.recorded_at || new Date().toISOString();
+    const idempotencyKey = vote.idempotencyKey || vote.idempotency_key || `${invKey}:${startupId}`;
+
+    if (!startupId || !respType) return;
+
+    // 1. Maintain Live Admin Data
+    const formattedForAdmin = {
+      investor_key: invKey,
+      investor_name: invName,
+      investor_email: invEmail || invKey,
+      startup_id: startupId,
+      startup_name: startupName,
+      response_type: respType,
+      recorded_at: recordedAt,
+      idempotency_key: idempotencyKey
+    };
+
+    const existingIdx = adminLiveStats.responses.findIndex(r => r.investor_key === invKey && r.startup_id === startupId);
+    if (existingIdx !== -1) {
+      adminLiveStats.responses[existingIdx] = formattedForAdmin;
+    } else {
+      adminLiveStats.responses.unshift(formattedForAdmin);
+    }
+
+    // 2. Stream to Live Activity Ticker
+    pushRealtimeStreamItem({
+      type: 'RESPONSE_SUBMITTED',
+      actor: invName,
+      startup: startupName,
+      response: respType,
+      detail: `${invName} voted ${responseLabel(respType)} on ${startupName}`,
+      time: new Date()
+    });
+
+    // 3. Multi-Device Synchronization for the Logged-in Investor!
+    // Check if this vote was cast by the SAME investor on another device (same investor_key OR same email)
+    const myKey = session?.id;
+    const myEmail = (session?.email || '').trim().toLowerCase();
+    const isSameInvestor = (myKey && invKey && (myKey === invKey || myInvestorKeys.has(invKey))) || (myEmail && invEmail && myEmail === invEmail);
+
+    if (isSameInvestor) {
+      const activeKey = myKey || invKey;
+      const bucket = state.responseByInvestor[activeKey] || (state.responseByInvestor[activeKey] = {});
+      const existing = bucket[startupId];
+
+      if (!existing || existing.response !== respType) {
+        bucket[startupId] = {
+          response: respType,
+          startupId: startupId,
+          startupNumber: startups.find(s => s.id === startupId)?.n || parseInt((startupId || '').replace(/\D/g, ''), 10) || 1,
+          startupName: startupName,
+          investorKey: activeKey,
+          investorName: session?.name || invName,
+          investorEmail: session?.email || invEmail,
+          recordedAt: recordedAt,
+          idempotencyKey: idempotencyKey
+        };
+        saveState();
+
+        if (selectedStartup && selectedStartup.id === startupId) {
+          lastSubmitted = selectedStartup;
+          isEditingVote = false;
+          investorScreen = 'confirmation';
+        }
+
+        renderInvestor();
+        toast(`⚡ Synced: Your vote for ${startupName} was updated from your other device!`);
+      }
+    }
+
+    if (route === 'admin' && adminUnlocked) {
+      renderAdmin();
+    }
+  }
+
+  function broadcastVoteRealtime(voteItem) {
+    if (!voteItem) return;
+    if (realtimeChannel) {
+      try {
+        realtimeChannel.send({
+          type: 'broadcast',
+          event: 'investor_vote',
+          payload: voteItem
+        });
+      } catch (err) {
+        console.warn('[Realtime Broadcast] Vote send notice:', err);
+      }
+    }
+    // Also sync cross-tabs locally
+    if (bc) {
+      try {
+        bc.postMessage({ type: 'INVESTOR_VOTE', vote: voteItem });
+      } catch (_) {}
+    }
+  }
+
   function initSupabaseRealtime() {
     if (!supabase) return;
     try {
-      const channel = supabase.channel('startup-demo-live-room');
+      if (realtimeChannel) {
+        supabase.removeChannel(realtimeChannel);
+      }
+      realtimeChannel = supabase.channel('startup-demo-live-room', {
+        config: { broadcast: { self: false } }
+      });
 
-      // Listen to broadcast state
-      channel.on('broadcast', { event: 'state_sync' }, (payload) => {
+      // Listen to broadcast state from admin
+      realtimeChannel.on('broadcast', { event: 'state_sync' }, (payload) => {
         if (payload?.payload?.state) {
-          state = { ...defaultState, ...payload.payload.state };
+          const incoming = payload.payload.state;
+          state.pitch = incoming.pitch ?? state.pitch;
+          state.eventStatus = incoming.eventStatus ?? state.eventStatus;
+          state.stageStatus = incoming.stageStatus ?? state.stageStatus;
+          state.published = incoming.published ?? state.published;
+          state.stateVersion = incoming.stateVersion ?? state.stateVersion;
+          if (incoming.responseByInvestor) {
+            Object.keys(incoming.responseByInvestor).forEach(k => {
+              state.responseByInvestor[k] = {
+                ...(state.responseByInvestor[k] || {}),
+                ...incoming.responseByInvestor[k]
+              };
+            });
+          }
           saveState();
           renderAll();
         }
       });
 
-      // Realtime Postgres Changes: New Responses inserted by ANY investor
-      channel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'demo_responses' }, (payload) => {
-        const newResp = payload.new;
-        if (newResp) {
-          // Check if not already in admin list
-          const existingIdx = adminLiveStats.responses.findIndex(r => r.investor_key === newResp.investor_key && r.startup_id === newResp.startup_id);
-          if (existingIdx !== -1) {
-            adminLiveStats.responses[existingIdx] = newResp;
-          } else {
-            adminLiveStats.responses.unshift(newResp);
+      // Listen to broadcast investor votes (Sub-second cross-device sync)
+      realtimeChannel.on('broadcast', { event: 'investor_vote' }, (msg) => {
+        if (msg?.payload) {
+          handleIncomingVote(msg.payload);
+        }
+      });
+
+      // Realtime Postgres Changes: New or updated responses by ANY investor
+      realtimeChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'demo_responses' }, (payload) => {
+        const row = payload.new || payload.old;
+        if (payload.eventType === 'DELETE') {
+          if (row?.investor_key && state.responseByInvestor[row.investor_key]) {
+            delete state.responseByInvestor[row.investor_key][row.startup_id];
+            saveState();
+            renderAll();
           }
-          // Push to live activity stream
-          const invObj = adminLiveStats.investors.find(i => i.investor_key === newResp.investor_key);
-          const invName = newResp.investor_name || (invObj ? invObj.full_name : 'Investor');
-          pushRealtimeStreamItem({
-            type: 'RESPONSE_SUBMITTED',
-            actor: invName,
-            startup: newResp.startup_name || ('Startup ' + newResp.startup_id),
-            response: newResp.response_type,
-            detail: `${invName} voted ${responseLabel(newResp.response_type)}`,
-            time: new Date()
-          });
-          if (route === 'admin' && adminUnlocked) {
-            renderAdmin();
-          }
+          return;
+        }
+        if (payload.new) {
+          handleIncomingVote(payload.new);
         }
       });
 
       // Realtime Postgres Changes: New Investors joined
-      channel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'demo_investors' }, (payload) => {
+      realtimeChannel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'demo_investors' }, (payload) => {
         const newInv = payload.new;
         if (newInv) {
           if (!adminLiveStats.investors.some(i => i.investor_key === newInv.investor_key)) {
@@ -879,7 +1061,7 @@
       });
 
       // Realtime Postgres Changes: Investor presence update (last_active heartbeat)
-      channel.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'demo_investors' }, (payload) => {
+      realtimeChannel.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'demo_investors' }, (payload) => {
         const updInv = payload.new;
         if (updInv) {
           const idx = adminLiveStats.investors.findIndex(i => i.investor_key === updInv.investor_key);
@@ -895,7 +1077,7 @@
       });
 
       // Realtime Postgres Changes: Event State updates (Pitch change, stage publish)
-      channel.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'demo_event_state' }, (payload) => {
+      realtimeChannel.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'demo_event_state' }, (payload) => {
         const s = payload.new;
         if (s) {
           if (s.current_pitch !== state.pitch || s.event_status !== state.eventStatus || s.stage_status !== state.stageStatus) {
@@ -909,8 +1091,11 @@
         }
       });
 
-      channel.subscribe((status) => {
+      realtimeChannel.subscribe((status) => {
         console.log('[Supabase Realtime] Channel status:', status);
+        if (status === 'SUBSCRIBED' && session?.id) {
+          restoreResponsesFromSupabase(session.id, session.email);
+        }
       });
     } catch (err) {
       console.warn('[Supabase Realtime] Setup error:', err);
@@ -918,10 +1103,9 @@
   }
 
   async function broadcastStateRealtime() {
-    if (!supabase) return;
+    if (!realtimeChannel) return;
     try {
-      const channel = supabase.channel('startup-demo-live-room');
-      await channel.send({
+      await realtimeChannel.send({
         type: 'broadcast',
         event: 'state_sync',
         payload: { state }
@@ -956,9 +1140,25 @@
     bc.onmessage = (event) => {
       if (!event.data) return;
       if (event.data.type === 'STATE_SYNC') {
-        state = event.data.state || state;
-        saveState();
-        renderAll();
+        const incoming = event.data.state;
+        if (incoming) {
+          state.pitch = incoming.pitch ?? state.pitch;
+          state.eventStatus = incoming.eventStatus ?? state.eventStatus;
+          state.stageStatus = incoming.stageStatus ?? state.stageStatus;
+          state.published = incoming.published ?? state.published;
+          if (incoming.responseByInvestor) {
+            Object.keys(incoming.responseByInvestor).forEach(k => {
+              state.responseByInvestor[k] = {
+                ...(state.responseByInvestor[k] || {}),
+                ...incoming.responseByInvestor[k]
+              };
+            });
+          }
+          saveState();
+          renderAll();
+        }
+      } else if (event.data.type === 'INVESTOR_VOTE' && event.data.vote) {
+        handleIncomingVote(event.data.vote);
       }
     };
   } catch (_) {}
@@ -987,6 +1187,7 @@
     selectedStartup = startups.find(s => s.id === id) || null;
     if (!selectedStartup) return;
     pendingChoice = null;
+    isEditingVote = false;
     investorScreen = 'detail';
     renderInvestor();
 
@@ -1000,16 +1201,19 @@
   function submitResponse(choice) {
     if (!session || !selectedStartup) return;
     const current = responseFor(selectedStartup.id);
-    if (current) {
-      toast('Response already recorded.');
+    if (current && current.response === choice) {
+      toast(`You already selected "${responseLabel(choice)}".`);
       pendingChoice = null;
-      investorScreen = 'list';
+      isEditingVote = false;
+      lastSubmitted = selectedStartup;
+      investorScreen = 'confirmation';
       renderInvestor();
       return;
     }
 
     const key = getInvestorKey();
     const investorBucket = state.responseByInvestor[key] || (state.responseByInvestor[key] = {});
+    const isUpdate = !!current;
 
     const respItem = {
       response: choice,
@@ -1025,13 +1229,16 @@
 
     // 1. Optimistic Local Save (0ms latency — instant UI response)
     investorBucket[selectedStartup.id] = respItem;
-    state.investorResponses += 1;
+    if (!isUpdate) {
+      state.investorResponses += 1;
+    }
     state.stateVersion += 1;
     lastSubmitted = selectedStartup;
     pendingChoice = null;
+    isEditingVote = false;
     investorScreen = 'confirmation';
 
-    audit('RESPONSE_RECORDED', `${session.name} → ${selectedStartup.name}: ${choice}`, 'INVESTOR');
+    audit(isUpdate ? 'RESPONSE_UPDATED' : 'RESPONSE_RECORDED', `${session.name} → ${selectedStartup.name}: ${choice}`, 'INVESTOR');
 
     // Push immediately to realtime activity stream on admin screen
     pushRealtimeStreamItem({
@@ -1039,13 +1246,16 @@
       actor: session.name,
       startup: selectedStartup.name,
       response: choice,
-      detail: `${session.name} voted ${responseLabel(choice)} on ${selectedStartup.name}`,
+      detail: isUpdate
+        ? `${session.name} updated vote to ${responseLabel(choice)} on ${selectedStartup.name}`
+        : `${session.name} voted ${responseLabel(choice)} on ${selectedStartup.name}`,
       time: new Date()
     });
 
-    broadcast();
+    saveState();
     renderAll();
-    toast('✓ Response saved securely.');
+    broadcastVoteRealtime(respItem);
+    toast(isUpdate ? `✓ Vote updated to "${responseLabel(choice)}" & synced to all devices!` : '✓ Response saved securely.');
 
     // 2. Queue into Durable Outbox for guaranteed zero-loss delivery to cloud
     enqueueOutbox({
@@ -1062,7 +1272,7 @@
       }
     });
 
-    recordFeed('RESPONSE_SUBMITTED', {
+    recordFeed(isUpdate ? 'RESPONSE_UPDATED' : 'RESPONSE_SUBMITTED', {
       actorId: key,
       actorName: session.name,
       actorEmail: session.email,
@@ -1078,6 +1288,7 @@
   function backToList() {
     selectedStartup = null;
     pendingChoice = null;
+    isEditingVote = false;
     investorScreen = 'list';
     renderInvestor();
   }
@@ -1170,21 +1381,23 @@
   function renderDetailScreen() {
     const s = selectedStartup;
     const r = responseFor(s.id);
-    if (r) {
+    if (r && !isEditingVote) {
       investorScreen = 'confirmation';
       lastSubmitted = s;
       return renderConfirmationScreen();
     }
+    const isEdit = isEditingVote && !!r;
+
     return `${renderHeader()}<main class="phone-content detail-screen-content ${pendingChoice ? 'has-confirm' : ''}">
       <div class="detail-header">
         <button class="back-btn" data-action="back-list">‹</button>
-        <div class="detail-label">Pitch ${s.n} of ${TOTAL_PITCHES}</div>
-        <span class="live-pill">Live</span>
+        <div class="detail-label">${isEdit ? 'Update Vote • ' : ''}Pitch ${s.n} of ${TOTAL_PITCHES}</div>
+        <span class="live-pill" style="${isEdit ? 'background:#0284c7' : ''}">${isEdit ? 'Editing' : 'Live'}</span>
       </div>
       <section class="hero-card">
         <div class="hero-logo">${s.name}</div>
         <h2>${s.sub}</h2>
-        <p>A focused profile for Demo Day. Review the startup opportunity below, then cast your one-time immutable vote.</p>
+        <p>${isEdit ? 'Review the startup opportunity below to update your response. Any updates will sync across all your logged-in devices in real time.' : 'A focused profile for Demo Day. Review the startup opportunity below, then cast your official vote.'}</p>
         <div class="hero-visual">
           <div style="position:absolute;left:16px;top:15px;font-size:10px;font-weight:850;color:#3656a5">STARTUP DEMO</div>
           <div style="position:absolute;left:16px;bottom:15px;right:16px" class="feature-row">
@@ -1215,18 +1428,18 @@
       ${pendingChoice ? `
         <div class="confirm-box ${COLORS[pendingChoice]}">
           <div class="confirm-box-header">
-            <span class="confirm-badge">Step 2: Confirm Selection</span>
+            <span class="confirm-badge">${isEdit ? 'Step 2: Confirm Update' : 'Step 2: Confirm Selection'}</span>
             <span style="font-size:11px;color:#94a3b8">Prevents accidental taps</span>
           </div>
           <div class="confirm-choice-label ${COLORS[pendingChoice]}">
             <span>${responseIcon(pendingChoice)}</span>
             <span>${responseLabel(pendingChoice)}</span>
           </div>
-          <p class="confirm-desc">Are you sure you want to submit this response for <strong>${s.name}</strong>? Once confirmed, this response cannot be changed.</p>
+          <p class="confirm-desc">${isEdit ? `Are you sure you want to update your vote for <strong>${s.name}</strong> to <strong>${responseLabel(pendingChoice)}</strong>? This will update across both your devices.` : `Are you sure you want to submit this response for <strong>${s.name}</strong>? Once confirmed, this response will sync to all your devices.`}</p>
           <div class="confirm-btn-row">
-            <button class="btn-cancel-choice" data-action="cancel-choice">✕ Change Choice</button>
+            <button class="btn-cancel-choice" data-action="cancel-choice">✕ Cancel</button>
             <button class="btn-submit-choice ${COLORS[pendingChoice]}" data-action="confirm-submit">
-              ✓ Submit Response
+              ${isEdit ? '✓ Update Vote & Sync' : '✓ Submit Response'}
             </button>
           </div>
         </div>
@@ -1251,6 +1464,10 @@
         <span>${responseLabel(r?.response)}</span>
       </div>
       <button class="primary-cta" data-action="back-list">Back to Startup List →</button>
+      <button class="btn-change-choice" data-action="change-vote" style="margin-top:10px;background:rgba(255,255,255,0.9);border:1px solid #cbd5e1;color:#475569;padding:11px 16px;border-radius:12px;font-size:13px;font-weight:650;width:100%;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+        <span>✏️</span>
+        <span>Change / Update Your Vote</span>
+      </button>
     </main>${renderBottomNav('startups')}`;
   }
 
@@ -2376,10 +2593,32 @@
       }
 
       const action = e.target.closest('[data-action]')?.dataset.action;
+      if (action === 'fast-login') {
+        const card = e.target.closest('[data-action="fast-login"]');
+        const name = card?.dataset.name;
+        const email = card?.dataset.email;
+        if (name && email) {
+          performLogin(name, email);
+        }
+      }
       if (action === 'join') joinEvent();
       if (action === 'back-list') backToList();
+      if (action === 'change-vote') {
+        const s = lastSubmitted || selectedStartup;
+        if (s) {
+          selectedStartup = s;
+          isEditingVote = true;
+          pendingChoice = responseFor(s.id)?.response || null;
+          investorScreen = 'detail';
+          renderInvestor();
+        }
+      }
       if (action === 'cancel-choice') {
         pendingChoice = null;
+        if (isEditingVote) {
+          isEditingVote = false;
+          investorScreen = 'confirmation';
+        }
         renderInvestor();
       }
       if (action === 'confirm-submit') {
@@ -2521,7 +2760,7 @@
       if (valid) {
         console.log('[Session] Verified cloud session for:', session.name);
       }
-      await restoreResponsesFromSupabase();
+      await restoreResponsesFromSupabase(session.id, session.email);
     }
   })();
 
