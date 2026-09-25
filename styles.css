@@ -361,34 +361,68 @@ img{max-width:100%;height:auto}
 .net-badge.offline i{background:#ef4444;box-shadow:0 0 0 2px rgba(239,68,68,.25)}
 @keyframes pulseSync{0%,100%{opacity:1}50%{opacity:.75}}
 
-/* ── Admin Command Center Viewport & Responsive Scrolling ── */
+/* ── Modern Dashboard Layout with Left Sidebar & Responsive Desktop Shell ── */
 body.route-admin .desktop-shell,
 body.route-org .desktop-shell,
 body.route-stage .desktop-shell,
 body.route-references .desktop-shell {
-  display: block !important;
+  display: flex !important;
+  flex-direction: row !important;
   min-height: 100vh !important;
+  min-height: 100dvh !important;
   height: auto !important;
   overflow: visible !important;
-  overflow-y: auto !important;
   background: var(--bg);
+}
+
+body.route-admin .desktop-nav,
+body.route-org .desktop-nav,
+body.route-stage .desktop-nav,
+body.route-references .desktop-nav {
+  position: sticky !important;
+  top: 0 !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  flex-shrink: 0 !important;
+  width: 250px !important;
+  overflow-y: auto !important;
+  z-index: 40;
 }
 
 body.route-admin .desktop-main,
 body.route-org .desktop-main,
 body.route-stage .desktop-main,
 body.route-references .desktop-main {
-  height: auto !important;
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
   min-height: 100vh !important;
-  overflow: visible !important;
+  height: auto !important;
   overflow-y: auto !important;
-  padding: 32px 36px 64px !important;
-  width: 100% !important;
-  max-width: 1440px;
-  margin: 0 auto;
+  padding: 32px 40px 64px !important;
+  max-width: 100% !important;
+  margin: 0 !important;
 }
 
 @media(max-width:980px){
+  body.route-admin .desktop-shell,
+  body.route-org .desktop-shell,
+  body.route-stage .desktop-shell,
+  body.route-references .desktop-shell {
+    flex-direction: column !important;
+  }
+  body.route-admin .desktop-nav,
+  body.route-org .desktop-nav,
+  body.route-stage .desktop-nav,
+  body.route-references .desktop-nav {
+    position: static !important;
+    height: auto !important;
+    width: 100% !important;
+    padding: 14px 18px !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
   body.route-admin .desktop-main,
   body.route-org .desktop-main,
   body.route-stage .desktop-main,

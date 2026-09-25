@@ -266,9 +266,27 @@
   /* ══════════════════════════════════════════════════════════════
      DYNAMIC NETWORK BADGE (Resilience & Offline Indicator)
      ══════════════════════════════════════════════════════════════ */
+  let realtimeReconnectAttempts = 0;
+  let realtimeReconnectTimer = null;
+  let realtimeConnected = false;
+
+  function scheduleRealtimeReconnect() {
+    if (realtimeReconnectTimer || !navigator.onLine) return;
+    const delay = Math.min(30000, 1500 * Math.pow(1.5, realtimeReconnectAttempts) + Math.random() * 1000);
+    realtimeReconnectAttempts++;
+    console.log(`[Supabase Realtime] Reconnecting channel in ${(delay / 1000).toFixed(1)}s (attempt ${realtimeReconnectAttempts})...`);
+    updateNetworkStatusBadges();
+    realtimeReconnectTimer = setTimeout(() => {
+      realtimeReconnectTimer = null;
+      if (navigator.onLine) {
+        initSupabaseRealtime();
+      }
+    }, delay);
+  }
+
   function updateNetworkStatusBadges() {
     const pendingCount = outboxQueue.length;
-    let label = 'Online';
+    let label = 'Online (Live sync)';
     let cls = 'online';
 
     if (!navigator.onLine || netState === 'OFFLINE') {
@@ -277,6 +295,9 @@
     } else if (pendingCount > 0 || isFlushingOutbox) {
       cls = 'syncing';
       label = `Syncing (${pendingCount} pending)`;
+    } else if (!realtimeConnected && realtimeReconnectAttempts > 0) {
+      cls = 'syncing';
+      label = 'Reconnecting (Cloud sync)...';
     } else {
       cls = 'online';
       label = 'Online (Live sync)';
@@ -297,9 +318,11 @@
 
   window.addEventListener('online', () => {
     netState = 'ONLINE';
+    realtimeReconnectAttempts = 0;
     updateNetworkStatusBadges();
     toast('Network online — syncing data...');
     flushOutboxQueue();
+    initSupabaseRealtime();
   });
 
   window.addEventListener('offline', () => {
@@ -813,34 +836,39 @@
   }
 
   /* ══════════════════════════════════════════════════════════════
-     LIVE ADMIN DATA FETCHING & AGGREGATION
+     LIVE ADMIN DATA FETCHING & AGGREGATION (Resilient & Non-destructive)
      ══════════════════════════════════════════════════════════════ */
-  async function fetchAdminLiveData() {
-    if (!supabase || adminLiveStats.isSyncing) return;
+  async function fetchAdminLiveData(isManualTrigger = false) {
+    if (!supabase) return { success: false, error: 'No client' };
+    if (adminLiveStats.isSyncing) return { success: false, error: 'Already syncing' };
     adminLiveStats.isSyncing = true;
 
     try {
-      // 1. Fetch all registered investors
-      const { data: invData, error: invErr } = await supabase
-        .from('demo_investors')
-        .select('investor_key, full_name, email, joined_at, last_active')
-        .order('joined_at', { ascending: false });
+      // 1. Fetch registered investors and immutable responses in parallel with error resilience
+      const [invRes, respRes] = await Promise.all([
+        supabase
+          .from('demo_investors')
+          .select('investor_key, full_name, email, joined_at, last_active')
+          .order('joined_at', { ascending: false }),
+        supabase
+          .from('demo_responses')
+          .select('investor_key, startup_id, startup_name, response_type, recorded_at, idempotency_key')
+          .order('recorded_at', { ascending: false })
+      ]);
 
-      if (!invErr && invData) {
-        adminLiveStats.investors = invData;
+      let hasNewData = false;
+
+      if (!invRes.error && invRes.data) {
+        adminLiveStats.investors = invRes.data;
+        hasNewData = true;
+      } else if (invRes.error) {
+        console.warn('[Admin Sync] Investors query notice:', invRes.error.message);
       }
 
-      // 2. Fetch all immutable responses
-      const { data: respData, error: respErr } = await supabase
-        .from('demo_responses')
-        .select('investor_key, startup_id, startup_name, response_type, recorded_at, idempotency_key')
-        .order('recorded_at', { ascending: false });
-
-      if (!respErr && respData) {
-        // Hydrate investor full_name and email directly from registered investors list
+      if (!respRes.error && respRes.data) {
         const invMap = new Map();
         (adminLiveStats.investors || []).forEach(inv => invMap.set(inv.investor_key, inv));
-        adminLiveStats.responses = respData.map(r => {
+        adminLiveStats.responses = respRes.data.map(r => {
           const inv = invMap.get(r.investor_key);
           return {
             ...r,
@@ -848,6 +876,8 @@
             investor_email: (inv ? inv.email : r.investor_key)
           };
         });
+        hasNewData = true;
+
         try {
           localStorage.setItem('startup-demo-admin-backup-v2', JSON.stringify({
             savedAt: new Date().toISOString(),
@@ -855,16 +885,30 @@
             responses: adminLiveStats.responses
           }));
         } catch (e) {
-          console.warn('[Admin] Local backup write notice:', e);
+          console.warn('[Admin] Backup write note:', e);
         }
+      } else if (respRes.error) {
+        console.warn('[Admin Sync] Responses query notice:', respRes.error.message);
       }
 
       adminLiveStats.lastSync = new Date();
+      adminLiveStats.syncError = null;
+
       if (route === 'admin' && adminUnlocked) {
         renderAdmin();
       }
+
+      if (isManualTrigger) {
+        toast(`✓ Cloud synced: ${adminLiveStats.investors.length} investors, ${adminLiveStats.responses.length} total votes.`);
+      }
+      return { success: true, investors: adminLiveStats.investors.length, responses: adminLiveStats.responses.length };
     } catch (err) {
       console.warn('[Admin] Live sync fetch error:', err);
+      adminLiveStats.syncError = err?.message || 'Network error';
+      if (isManualTrigger) {
+        toast('⚠️ Cloud connection slow — displaying latest local cached data.');
+      }
+      return { success: false, error: err?.message || 'Network error' };
     } finally {
       adminLiveStats.isSyncing = false;
     }
@@ -1091,14 +1135,29 @@
         }
       });
 
-      realtimeChannel.subscribe((status) => {
-        console.log('[Supabase Realtime] Channel status:', status);
-        if (status === 'SUBSCRIBED' && session?.id) {
-          restoreResponsesFromSupabase(session.id, session.email);
+      realtimeChannel.subscribe((status, err) => {
+        console.log('[Supabase Realtime] Channel status:', status, err || '');
+        if (status === 'SUBSCRIBED') {
+          realtimeConnected = true;
+          realtimeReconnectAttempts = 0;
+          updateNetworkStatusBadges();
+          if (session?.id) {
+            restoreResponsesFromSupabase(session.id, session.email);
+          }
+          if (route === 'admin' && adminUnlocked) {
+            fetchAdminLiveData();
+          }
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          realtimeConnected = false;
+          updateNetworkStatusBadges();
+          scheduleRealtimeReconnect();
         }
       });
     } catch (err) {
       console.warn('[Supabase Realtime] Setup error:', err);
+      realtimeConnected = false;
+      updateNetworkStatusBadges();
+      scheduleRealtimeReconnect();
     }
   }
 
@@ -2313,8 +2372,8 @@
       recordFeed('ADMIN_ACTION', { detail: 'Event marked completed' });
     }
     if (action === 'refresh-data') {
-      fetchAdminLiveData();
-      toast('Refreshed data from Supabase.');
+      flushOutboxQueue();
+      fetchAdminLiveData(true);
     }
     if (action === 'reset') {
       if (confirm('Are you sure you want to reset all demo state?')) {
