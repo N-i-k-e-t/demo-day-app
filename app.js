@@ -1679,7 +1679,54 @@
       : (session ? [{ investor_key: session.id, full_name: session.name, email: session.email, joined_at: session.joinedAt, last_active: new Date().toISOString() }] : []);
 
     const totalInvestors = effectiveInvestors.length;
-    const totalResponsesCount = adminLiveStats.responses.length || Object.values(state.responseByInvestor).reduce((acc, cur) => acc + Object.keys(cur || {}).length, 0);
+
+    // Helper: Map all recorded responses per startup for a given investor
+    const getInvestorResponseMap = (inv) => {
+      const respMap = {};
+      if (state.responseByInvestor[inv.investor_key]) {
+        Object.values(state.responseByInvestor[inv.investor_key]).forEach(r => {
+          const sId = r.startupId || r.startup_id;
+          if (sId) respMap[sId] = r.response || r.response_type;
+        });
+      }
+      adminLiveStats.responses.filter(r => r.investor_key === inv.investor_key).forEach(r => {
+        const sId = r.startup_id || r.startupId;
+        if (sId) respMap[sId] = r.response_type || r.response;
+      });
+      return respMap;
+    };
+
+    // Deduplicated list of all responses across all startups and investors
+    const allUniqueResponses = [];
+    const seenResponseKey = new Set();
+    adminLiveStats.responses.forEach(r => {
+      const sId = r.startup_id || r.startupId;
+      const k = `${r.investor_key}__${sId}`;
+      seenResponseKey.add(k);
+      allUniqueResponses.push({ ...r, startup_id: sId, response_type: r.response_type || r.response });
+    });
+    Object.entries(state.responseByInvestor).forEach(([invKey, respObj]) => {
+      Object.entries(respObj || {}).forEach(([sId, r]) => {
+        const k = `${invKey}__${sId}`;
+        if (!seenResponseKey.has(k)) {
+          seenResponseKey.add(k);
+          allUniqueResponses.push({
+            investor_key: invKey,
+            startup_id: sId,
+            response_type: r.response || r.response_type,
+            recorded_at: r.recordedAt
+          });
+        }
+      });
+    });
+
+    const totalResponsesCount = allUniqueResponses.length;
+    const maxExpectedResponses = totalInvestors * TOTAL_PITCHES;
+    const overallCompletionPct = maxExpectedResponses > 0 ? Math.round((totalResponsesCount / maxExpectedResponses) * 100) : 0;
+
+    const allInterested = allUniqueResponses.filter(r => (r.response_type || r.response) === RESPONSE.INTERESTED).length;
+    const allExplore = allUniqueResponses.filter(r => (r.response_type || r.response) === RESPONSE.EXPLORE).length;
+    const allNotInterested = allUniqueResponses.filter(r => (r.response_type || r.response) === RESPONSE.NOT_INTERESTED).length;
 
     // Online Now Detection (Active within 60s or current session is online)
     const now = Date.now();
@@ -1691,30 +1738,14 @@
     };
     const onlineNowCount = effectiveInvestors.filter(isInvestorOnline).length;
 
-    // Distinct investors who have submitted at least 1 response overall
-    const allInvestorKeysWithVotes = new Set([
-      ...adminLiveStats.responses.map(r => r.investor_key),
-      ...Object.keys(state.responseByInvestor).filter(k => Object.keys(state.responseByInvestor[k] || {}).length > 0)
-    ]);
-    const totalVotedInvestorsCount = allInvestorKeysWithVotes.size;
-
-    // Current Pitch Submission Stats
-    const currentResponses = adminLiveStats.responses.length > 0
-      ? adminLiveStats.responses.filter(r => r.startup_id === currentStartup.id)
-      : Object.values(state.responseByInvestor).map(b => b[currentStartup.id]).filter(Boolean);
-
-    const currentPitchVotedKeys = new Set(
-      adminLiveStats.responses.length > 0
-        ? currentResponses.map(r => r.investor_key)
-        : Object.keys(state.responseByInvestor).filter(k => state.responseByInvestor[k]?.[currentStartup.id])
-    );
-    const currentSubmittedCount = currentPitchVotedKeys.size;
-    const currentCompletionPct = totalInvestors > 0 ? Math.round((currentSubmittedCount / totalInvestors) * 100) : 0;
-
-    const currentInterested = currentResponses.filter(r => (r.response_type || r.response) === RESPONSE.INTERESTED).length;
-    const currentExplore = currentResponses.filter(r => (r.response_type || r.response) === RESPONSE.EXPLORE).length;
-    const currentNotInterested = currentResponses.filter(r => (r.response_type || r.response) === RESPONSE.NOT_INTERESTED).length;
-    const currentPending = Math.max(0, totalInvestors - currentSubmittedCount);
+    // Investor completion cohorts
+    const allDoneInvestorsCount = effectiveInvestors.filter(inv => Object.keys(getInvestorResponseMap(inv)).length === TOTAL_PITCHES).length;
+    const inProgressInvestorsCount = effectiveInvestors.filter(inv => {
+      const c = Object.keys(getInvestorResponseMap(inv)).length;
+      return c > 0 && c < TOTAL_PITCHES;
+    }).length;
+    const noResponseInvestorsCount = effectiveInvestors.filter(inv => Object.keys(getInvestorResponseMap(inv)).length === 0).length;
+    const totalVotedInvestorsCount = effectiveInvestors.filter(inv => Object.keys(getInvestorResponseMap(inv)).length > 0).length;
 
     const published = state.published[state.pitch] || null;
     const baseURL = window.location.origin + window.location.pathname;
@@ -1728,9 +1759,9 @@
       <section class="admin-hero-live">
         <div class="admin-hero-top">
           <div class="admin-hero-meta">
-            <span class="eyebrow" style="color:#38bdf8;background:rgba(56,189,248,0.12);padding:4px 12px;border-radius:999px;border:1px solid rgba(56,189,248,0.25);display:inline-block;margin-bottom:6px">PITCH ${state.pitch} OF ${TOTAL_PITCHES} • LIVE PARTICIPATION</span>
-            <h2>Booth ${currentStartup.n} • ${currentStartup.name}</h2>
-            <p>Real-time submission engine: Instant live tracking of investor votes and syndicate sentiment.</p>
+            <span class="eyebrow" style="color:#38bdf8;background:rgba(56,189,248,0.12);padding:4px 12px;border-radius:999px;border:1px solid rgba(56,189,248,0.25);display:inline-block;margin-bottom:6px">15 STARTUP BOOTHS • REAL-TIME INVESTOR RESPONSES</span>
+            <h2>Startup Demo Day Response Hub</h2>
+            <p>Live responses recorded per startup across all 15 booths with instant syndicate sentiment.</p>
           </div>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             <span class="net-badge online"><span class="live-pulse-dot" style="width:7px;height:7px"></span> Realtime Submissions Stream</span>
@@ -1738,25 +1769,25 @@
         </div>
 
         <div class="live-completion-stats">
-          <div class="live-completion-num">${currentSubmittedCount > 0 ? currentSubmittedCount : '0'} <span style="font-size:22px;font-weight:600;color:#94a3b8">/ ${totalInvestors > 0 ? totalInvestors : '0'}</span></div>
+          <div class="live-completion-num">${totalResponsesCount > 0 ? totalResponsesCount : '0'} <span style="font-size:22px;font-weight:600;color:#94a3b8">/ ${maxExpectedResponses > 0 ? maxExpectedResponses : '0'}</span></div>
           <div class="live-completion-desc">
-            <strong>${currentSubmittedCount > 0 ? `${currentCompletionPct}% of registered investors submitted` : 'No submissions recorded yet for this pitch'}</strong>
-            <span>${totalInvestors > 0 ? (currentPending > 0 ? `${currentPending} investors still pending for this pitch` : 'All registered investors have submitted!') : 'Awaiting live investor participation'}</span>
+            <strong>${totalResponsesCount > 0 ? `${overallCompletionPct}% of total expected booth responses recorded` : 'Awaiting initial investor responses'}</strong>
+            <span>${totalInvestors > 0 ? `${totalVotedInvestorsCount} of ${totalInvestors} investors active (${allDoneInvestorsCount} completed all 15 booths)` : 'Awaiting live investor participation'}</span>
           </div>
         </div>
 
         <div class="completion-track">
-          <div class="completion-fill" style="width: ${Math.min(100, currentCompletionPct)}%"></div>
+          <div class="completion-fill" style="width: ${Math.min(100, overallCompletionPct)}%"></div>
         </div>
 
         <div class="live-chips-row">
-          ${currentSubmittedCount > 0 ? `
-            <span class="live-stat-chip green">👍 <strong>${currentInterested}</strong> Interested</span>
-            <span class="live-stat-chip yellow">? <strong>${currentExplore}</strong> Explore More</span>
-            <span class="live-stat-chip blue">👎 <strong>${currentNotInterested}</strong> Not Interested</span>
-            <span class="live-stat-chip gray">⏳ <strong>${currentPending}</strong> Pending</span>
+          ${totalResponsesCount > 0 ? `
+            <span class="live-stat-chip green">👍 <strong>${allInterested}</strong> Interested</span>
+            <span class="live-stat-chip yellow">? <strong>${allExplore}</strong> Explore More</span>
+            <span class="live-stat-chip blue">👎 <strong>${allNotInterested}</strong> Not Interested</span>
+            <span class="live-stat-chip gray">⏳ <strong>${Math.max(0, maxExpectedResponses - totalResponsesCount)}</strong> Pending</span>
           ` : `
-            <span class="live-stat-chip gray" style="font-weight:600;padding:6px 14px">— Awaiting live responses for pitch ${state.pitch} (${currentStartup.name}) —</span>
+            <span class="live-stat-chip gray" style="font-weight:600;padding:6px 14px">— Awaiting live responses across 15 startup booths —</span>
           `}
         </div>
       </section>
@@ -1774,24 +1805,24 @@
           <span class="detail-label">${onlineNowCount > 0 ? 'Active in last 60s' : 'Awaiting sign-ins'}</span>
         </div>
         <div class="kpi kpi-voters">
-          <small>✅ Responded Investors</small>
+          <small>✅ Active Voters</small>
           <strong>${totalVotedInvestorsCount} <span style="font-size:18px;font-weight:600;color:#94a3b8">/ ${totalInvestors}</span></strong>
-          <span class="detail-label">${totalInvestors > 0 ? Math.round((totalVotedInvestorsCount / totalInvestors) * 100) : 0}% active participation</span>
+          <span class="detail-label">${totalInvestors > 0 ? Math.round((totalVotedInvestorsCount / totalInvestors) * 100) : 0}% participated</span>
         </div>
         <div class="kpi kpi-pitch">
-          <small>📊 Pitch ${state.pitch} Votes</small>
-          <strong>${currentSubmittedCount} <span style="font-size:18px;font-weight:600;color:#94a3b8">/ ${totalInvestors}</span></strong>
-          <span class="detail-label">${currentPending} pending for ${currentStartup.name}</span>
+          <small>🎯 All 15 Done</small>
+          <strong>${allDoneInvestorsCount} <span style="font-size:18px;font-weight:600;color:#94a3b8">/ ${totalInvestors}</span></strong>
+          <span class="detail-label">${inProgressInvestorsCount} in progress</span>
         </div>
         <div class="kpi kpi-total">
-          <small>📈 Total Submissions</small>
+          <small>📈 Total Responses</small>
           <strong>${totalResponsesCount}</strong>
-          <span class="detail-label">Across all 15 startups</span>
+          <span class="detail-label">Across all 15 booths</span>
         </div>
         <div class="kpi kpi-network">
-          <small>🌐 Cloud Engine</small>
-          <strong style="font-size:22px;margin-top:6px">${netState === 'ONLINE' ? '🟢 Cloud Sync' : '🔴 Local Only'}</strong>
-          <span class="detail-label">${outboxQueue.length} pending outbox items</span>
+          <small>🌐 Cloud Sync</small>
+          <strong style="font-size:22px;margin-top:6px">${netState === 'ONLINE' ? '🟢 Realtime' : '🔴 Local Only'}</strong>
+          <span class="detail-label">${outboxQueue.length} pending outbox</span>
         </div>
       </div>
 
@@ -1800,13 +1831,13 @@
         <section class="panel">
           <h3>
             <span>🎛️ Event & Stage Controls</span>
-            <span class="live-stat-chip blue" style="font-size:10px;padding:3px 10px;font-weight:800">Pitch ${state.pitch} Active</span>
+            <span class="live-stat-chip blue" style="font-size:10px;padding:3px 10px;font-weight:800">Featured: Booth ${currentStartup.n}</span>
           </h3>
-          <p class="detail-label" style="margin-bottom:16px">Control stage progression and publish live aggregated sentiment to audience screens.</p>
+          <p class="detail-label" style="margin-bottom:16px">Control stage featured startup and publish live aggregated sentiment to audience screens.</p>
           
           <div class="admin-btns">
             <button class="admin-btn blue" data-admin="start">▶ Start Event</button>
-            <button class="admin-btn yellow" data-admin="next">⏭ Next Startup (${Math.min(TOTAL_PITCHES, state.pitch + 1)})</button>
+            <button class="admin-btn yellow" data-admin="next">⏭ Next Booth (${Math.min(TOTAL_PITCHES, state.pitch + 1)})</button>
             <button class="admin-btn green" data-admin="prepare">🎯 Prepare Stage</button>
             <button class="admin-btn dark" data-admin="publish">📡 Publish to Stage</button>
             <button class="admin-btn red" data-admin="complete">🏁 Complete Event</button>
@@ -1851,21 +1882,21 @@
         </section>
       </div>
 
-      <!-- Live Pitch-by-Pitch Matrix -->
+      <!-- Live Startup Completion Matrix -->
       <div class="panel" style="margin-top:22px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
           <div>
-            <h3 style="margin:0 0 4px">Startup Completion Matrix (All 15 Startups)</h3>
-            <p class="detail-label" style="margin:0">Real-time breakdown of how many investors have filled their response for each startup.</p>
+            <h3 style="margin:0 0 4px">Startup Booth Completion Matrix (All 15 Startups)</h3>
+            <p class="detail-label" style="margin:0">Real-time breakdown of how many investors have filled their response for each startup booth.</p>
           </div>
-          <span class="live-stat-chip blue" style="font-weight:800;font-size:11px">15 Pitches Total</span>
+          <span class="live-stat-chip blue" style="font-weight:800;font-size:11px">15 Booths Total</span>
         </div>
         <div class="roster-wrap">
           <table class="roster-table">
             <thead>
               <tr>
-                <th style="width:50px">#</th>
-                <th>Startup</th>
+                <th style="width:65px">Booth</th>
+                <th>Startup Name</th>
                 <th style="width:140px">Submissions</th>
                 <th style="width:190px">Participation</th>
                 <th>Breakdown (👍 / ? / 👎)</th>
@@ -1874,21 +1905,19 @@
             </thead>
             <tbody>
               ${startups.map(s => {
-                const sResps = adminLiveStats.responses.length > 0
-                  ? adminLiveStats.responses.filter(r => r.startup_id === s.id)
-                  : Object.values(state.responseByInvestor).map(b => b[s.id]).filter(Boolean);
+                const sResps = allUniqueResponses.filter(r => (r.startup_id || r.startupId) === s.id);
                 const count = sResps.length;
                 const hasVotes = count > 0;
                 const pct = totalInvestors > 0 ? Math.round((count / totalInvestors) * 100) : 0;
                 const iCount = sResps.filter(r => (r.response_type || r.response) === RESPONSE.INTERESTED).length;
                 const eCount = sResps.filter(r => (r.response_type || r.response) === RESPONSE.EXPLORE).length;
                 const nCount = sResps.filter(r => (r.response_type || r.response) === RESPONSE.NOT_INTERESTED).length;
-                const isCurrent = s.n === state.pitch;
-                const status = isCurrent ? 'CURRENT PITCH' : s.n < state.pitch ? 'COMPLETED' : 'UPCOMING';
-                const statusColor = isCurrent ? 'blue' : s.n < state.pitch ? 'green' : 'gray';
+                const isAllVoted = count >= totalInvestors && totalInvestors > 0;
+                const status = isAllVoted ? 'ALL VOTED' : count > 0 ? 'ACTIVE' : 'OPEN';
+                const statusColor = isAllVoted ? 'green' : count > 0 ? 'blue' : 'gray';
 
-                return `<tr class="${isCurrent ? 'active-pitch-row' : ''}">
-                  <td><strong style="color:${isCurrent ? '#2563eb' : 'inherit'}">${s.n}</strong></td>
+                return `<tr>
+                  <td><strong>B${s.n}</strong></td>
                   <td>
                     <div style="display:flex;align-items:center;gap:6px">
                       <span class="booth-tag">Booth ${s.n}</span>
@@ -1924,14 +1953,15 @@
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
           <div>
             <h3 style="margin:0 0 4px">Live Registered Investors Roster (${totalInvestors})</h3>
-            <p class="detail-label" style="margin:0">Live presence and pitch-by-pitch user response tracker.</p>
+            <p class="detail-label" style="margin:0">Live presence and per-startup responses tracker across all 15 booths.</p>
           </div>
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <div class="roster-tabs">
               <button class="roster-tab-btn ${adminRosterFilter === 'all' ? 'active' : ''}" data-roster-filter="all">All (${totalInvestors})</button>
               <button class="roster-tab-btn ${adminRosterFilter === 'online' ? 'active' : ''}" data-roster-filter="online">🟢 Online Now (${onlineNowCount})</button>
-              <button class="roster-tab-btn ${adminRosterFilter === 'voted' ? 'active' : ''}" data-roster-filter="voted">✅ Voted Pitch ${state.pitch} (${currentSubmittedCount})</button>
-              <button class="roster-tab-btn ${adminRosterFilter === 'pending' ? 'active' : ''}" data-roster-filter="pending">⏳ Pending Pitch ${state.pitch} (${currentPending})</button>
+              <button class="roster-tab-btn ${adminRosterFilter === 'complete' ? 'active' : ''}" data-roster-filter="complete">✅ All 15 Done (${allDoneInvestorsCount})</button>
+              <button class="roster-tab-btn ${adminRosterFilter === 'progress' ? 'active' : ''}" data-roster-filter="progress">⚡ In Progress (${inProgressInvestorsCount})</button>
+              <button class="roster-tab-btn ${adminRosterFilter === 'unvoted' ? 'active' : ''}" data-roster-filter="unvoted">⏳ No Responses (${noResponseInvestorsCount})</button>
             </div>
             <button class="admin-btn neutral" data-admin="refresh-data" style="font-size:11.5px;padding:7px 14px">↻ Refresh Cloud Data</button>
           </div>
@@ -1941,9 +1971,9 @@
             <thead>
               <tr>
                 <th>Investor Name & Details</th>
-                <th>Pitch ${state.pitch} Vote (${currentStartup.name})</th>
-                <th>Submissions Done</th>
-                <th>User Sentiment (👍 / ? / 👎)</th>
+                <th>Responses Per Startup (15 Booths)</th>
+                <th>Progress</th>
+                <th>Sentiment (👍 / ? / 👎)</th>
                 <th>Joined</th>
                 <th>Status</th>
               </tr>
@@ -1953,10 +1983,15 @@
                 let list = effectiveInvestors;
                 if (adminRosterFilter === 'online') {
                   list = list.filter(isInvestorOnline);
-                } else if (adminRosterFilter === 'voted') {
-                  list = list.filter(inv => currentPitchVotedKeys.has(inv.investor_key));
-                } else if (adminRosterFilter === 'pending') {
-                  list = list.filter(inv => !currentPitchVotedKeys.has(inv.investor_key));
+                } else if (adminRosterFilter === 'complete') {
+                  list = list.filter(inv => Object.keys(getInvestorResponseMap(inv)).length === TOTAL_PITCHES);
+                } else if (adminRosterFilter === 'progress') {
+                  list = list.filter(inv => {
+                    const c = Object.keys(getInvestorResponseMap(inv)).length;
+                    return c > 0 && c < TOTAL_PITCHES;
+                  });
+                } else if (adminRosterFilter === 'unvoted') {
+                  list = list.filter(inv => Object.keys(getInvestorResponseMap(inv)).length === 0);
                 }
 
                 if (list.length === 0) {
@@ -1964,30 +1999,30 @@
                 }
 
                 return list.map(inv => {
-                  const invResps = adminLiveStats.responses.filter(r => r.investor_key === inv.investor_key);
-                  const localResps = state.responseByInvestor[inv.investor_key] ? Object.values(state.responseByInvestor[inv.investor_key]) : [];
-                  const respsToCount = invResps.length > 0 ? invResps : localResps;
-
-                  const count = respsToCount.length;
+                  const respMap = getInvestorResponseMap(inv);
+                  const count = Object.keys(respMap).length;
                   const hasUserVotes = count > 0;
                   const pct = Math.round((count / TOTAL_PITCHES) * 100);
                   const badgeClass = count === TOTAL_PITCHES ? 'complete' : count > 0 ? 'progress' : 'pending';
-                  const badgeLabel = count === TOTAL_PITCHES ? 'All 15 Completed' : count > 0 ? 'In Progress' : 'No Votes Yet';
+                  const badgeLabel = count === TOTAL_PITCHES ? 'All 15 Completed' : count > 0 ? 'In Progress' : 'No Responses Yet';
 
-                  const userInterested = respsToCount.filter(r => (r.response_type || r.response) === RESPONSE.INTERESTED).length;
-                  const userExplore = respsToCount.filter(r => (r.response_type || r.response) === RESPONSE.EXPLORE).length;
-                  const userNotInterested = respsToCount.filter(r => (r.response_type || r.response) === RESPONSE.NOT_INTERESTED).length;
+                  const userInterested = Object.values(respMap).filter(v => v === RESPONSE.INTERESTED).length;
+                  const userExplore = Object.values(respMap).filter(v => v === RESPONSE.EXPLORE).length;
+                  const userNotInterested = Object.values(respMap).filter(v => v === RESPONSE.NOT_INTERESTED).length;
 
-                  // Pitch-specific vote for current pitch
-                  const currentPitchVoteObj = respsToCount.find(r => (r.startup_id || r.startupId) === currentStartup.id);
-                  const currentPitchVote = currentPitchVoteObj ? (currentPitchVoteObj.response_type || currentPitchVoteObj.response) : null;
-                  const currentVoteChip = currentPitchVote === RESPONSE.INTERESTED
-                    ? '<span class="live-stat-chip green" style="padding:3px 10px;font-size:11px;font-weight:800">👍 Interested</span>'
-                    : currentPitchVote === RESPONSE.EXPLORE
-                    ? '<span class="live-stat-chip yellow" style="padding:3px 10px;font-size:11px;font-weight:800">? Explore</span>'
-                    : currentPitchVote === RESPONSE.NOT_INTERESTED
-                    ? '<span class="live-stat-chip blue" style="padding:3px 10px;font-size:11px;font-weight:800">👎 Not Interested</span>'
-                    : '<span class="live-stat-chip gray" style="padding:3px 10px;font-size:11px">⏳ Pending</span>';
+                  // 15 Booth Badges per startup
+                  const boothBadges = startups.map(s => {
+                    const resp = respMap[s.id];
+                    if (resp === RESPONSE.INTERESTED) {
+                      return `<span class="booth-resp-badge green" title="Booth ${s.n} (${s.name}): Interested (👍)">B${s.n} 👍</span>`;
+                    } else if (resp === RESPONSE.EXPLORE) {
+                      return `<span class="booth-resp-badge yellow" title="Booth ${s.n} (${s.name}): Explore More (?)">B${s.n} ?</span>`;
+                    } else if (resp === RESPONSE.NOT_INTERESTED) {
+                      return `<span class="booth-resp-badge blue" title="Booth ${s.n} (${s.name}): Not Interested (👎)">B${s.n} 👎</span>`;
+                    } else {
+                      return `<span class="booth-resp-badge empty" title="Booth ${s.n} (${s.name}): Pending response">B${s.n} ·</span>`;
+                    }
+                  }).join('');
 
                   const lastActiveMs = inv.last_active ? (Date.now() - new Date(inv.last_active).getTime()) : 0;
                   const isSelf = session?.id === inv.investor_key;
@@ -2013,7 +2048,11 @@
                         </div>
                       </div>
                     </td>
-                    <td>${currentVoteChip}</td>
+                    <td>
+                      <div class="booth-resp-grid">
+                        ${boothBadges}
+                      </div>
+                    </td>
                     <td>
                       ${hasUserVotes ? `
                         <div class="mini-prog">
@@ -2046,13 +2085,13 @@
           ${published ? '<span class="live-stat-chip green" style="font-size:10px;padding:3px 10px">Live on Screen</span>' : ''}
         </h3>
         ${published ? `<div class="notice" style="background:#f0fdf4;border-color:#bbf7d0;color:#166534">
-          <strong style="font-size:14px">Pitch ${state.pitch} (${currentStartup.name}) Published:</strong><br>
+          <strong style="font-size:14px">Featured Booth ${currentStartup.n} (${currentStartup.name}) Snapshot:</strong><br>
           <div style="margin-top:8px;display:flex;gap:10px;flex-wrap:wrap">
             <span class="live-stat-chip green" style="font-weight:800;padding:4px 10px">👍 ${published.i}% Interested</span>
             <span class="live-stat-chip yellow" style="font-weight:800;padding:4px 10px">? ${published.e}% Explore More</span>
             <span class="live-stat-chip blue" style="font-weight:800;padding:4px 10px">👎 ${published.n}% Not Interested</span>
           </div>
-        </div>` : '<div class="notice">No snapshot published yet for this pitch. Click "Publish to Stage" to make aggregated results visible on the Stage screen.</div>'}
+        </div>` : '<div class="notice">No snapshot published yet for this booth. Click "Publish to Stage" to make aggregated results visible on the Stage screen.</div>'}
       </div>
 
       <!-- Generated Shareable Event Links (Admin-Only Access) -->
@@ -2067,7 +2106,7 @@
 
         <div class="link-gen-container">
           <div class="link-gen-row">
-            <span class="link-gen-title">📱 <strong>Investor Voting App</strong></span>
+            <span class="link-gen-title">📱 <strong>Investor Hub App</strong></span>
             <input id="admin-link-investor" class="link-gen-url" value="${investorURL}" readonly>
             <button class="btn-copy-link" data-copy-link="admin-link-investor">📋 Copy Link</button>
             <a href="${investorURL}" target="_blank" class="btn-open-link" style="text-decoration:none">Open App ↗</a>
