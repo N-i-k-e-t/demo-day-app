@@ -1626,9 +1626,11 @@
     const root = document.getElementById('stage-root');
     if (!root) return;
     const s = startups[state.pitch - 1] || startups[0];
+    const exitBtn = `<button data-route="admin" style="position:absolute;top:20px;right:20px;background:rgba(255,255,255,0.08);color:#94a3b8;font-size:11px;font-weight:700;padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);cursor:pointer;z-index:100">Exit Stage ✕</button>`;
 
     if (state.stageStatus === 'PREPARING') {
       root.innerHTML = `<section class="stage-screen">
+        ${exitBtn}
         <div class="stage-content">
           <div class="stage-loading">
             <div class="spinner"></div>
@@ -1643,6 +1645,7 @@
     if (state.stageStatus === 'PUBLISHED' && state.published[state.pitch]) {
       const p = state.published[state.pitch];
       root.innerHTML = `<section class="stage-screen">
+        ${exitBtn}
         <div class="stage-content">
           <span class="stage-badge">PUBLISHED RESULTS</span>
           <h2>${s.name}</h2>
@@ -1658,6 +1661,7 @@
     }
 
     root.innerHTML = `<section class="stage-screen">
+      ${exitBtn}
       <div class="stage-content">
         <img src="assets/logo.png" alt="AFF Logo" style="width:76px;height:76px;margin:0 auto 14px;display:block;filter:drop-shadow(0 6px 16px rgba(0,0,0,0.12))">
         <span class="stage-badge">LIVE PITCH • ${state.pitch}/${TOTAL_PITCHES}</span>
