@@ -1021,10 +1021,7 @@
 
   function renderProgress() {
     return `<div class="progress-row">
-      <div>
-        <div class="progress-label">${TOTAL_PITCHES} startups available</div>
-        <div class="dots">${startups.map((s, idx) => `<i class="dot ${idx + 1 === state.pitch ? 'active' : ''}"></i>`).join('')}</div>
-      </div>
+      <div class="progress-label">${TOTAL_PITCHES} startups available</div>
       <span class="live-pill">${state.eventStatus}</span>
     </div>`;
   }
@@ -1090,7 +1087,6 @@
         <div class="detail-label">Pitch ${s.n} of ${TOTAL_PITCHES}</div>
         <span class="live-pill">Live</span>
       </div>
-      ${renderProgress()}
       <section class="hero-card">
         <div class="hero-logo">${s.name}</div>
         <h2>${s.sub}</h2>

@@ -17,9 +17,7 @@
 .progress-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0 12px}
 .progress-label{font-weight:850;font-size:19px}
 .live-pill{background:#eefaf3;color:#16824e;border-radius:999px;padding:7px 11px;font-size:11px;font-weight:850}
-.dots{display:flex;gap:6px;overflow:hidden;max-width:245px}
-.dot{width:9px;height:9px;border-radius:50%;background:#e6eaf3;flex:0 0 auto}
-.dot.active{background:#2d64ed}
+.dots{display:none !important}
 .filters{display:flex;gap:8px;overflow:auto;padding-bottom:5px;margin:12px 0}
 .chip{white-space:nowrap;border-radius:999px;padding:9px 12px;background:#f4f6fb;color:#64708b;font-size:12px;font-weight:750}
 .chip.active{background:#2a64f6;color:#fff}
