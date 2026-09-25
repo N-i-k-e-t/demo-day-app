@@ -635,7 +635,9 @@
   const ADMIN_SESSION_KEY = 'startup-demo-admin-unlocked';
   try {
     adminUnlocked = sessionStorage.getItem(ADMIN_SESSION_KEY) === 'true';
-  } catch (_) {}
+  } catch (err) {
+    console.warn('[Admin] SessionStorage access error:', err);
+  }
 
   function showAdminLock() {
     const overlay = document.getElementById('admin-lock-overlay');
@@ -716,6 +718,15 @@
 
       if (!respErr && respData) {
         adminLiveStats.responses = respData;
+        try {
+          localStorage.setItem('startup-demo-admin-backup-v2', JSON.stringify({
+            savedAt: new Date().toISOString(),
+            investors: adminLiveStats.investors,
+            responses: adminLiveStats.responses
+          }));
+        } catch (e) {
+          console.warn('[Admin] Local backup write notice:', e);
+        }
       }
 
       adminLiveStats.lastSync = new Date();
@@ -1317,6 +1328,14 @@
             <button class="admin-btn red" data-admin="complete">Complete Event</button>
             <button class="admin-btn" style="background:#eef1f6" data-admin="reset">Reset Demo</button>
           </div>
+          <div style="margin-top:16px;padding-top:14px;border-top:1px solid #edf2f7">
+            <h4 style="margin:0 0 10px;font-size:13px;color:var(--ink)">Real-Time Data Backups & Exports</h4>
+            <div class="admin-btns">
+              <button class="admin-btn green" data-action="export-csv">📥 Export All Votes (CSV)</button>
+              <button class="admin-btn blue" data-action="export-json">💾 Download Event Backup (JSON)</button>
+              <button class="admin-btn" style="background:#eef1f6" data-admin="refresh-data">🔄 Force Cloud Sync</button>
+            </div>
+          </div>
           <div class="notice" style="margin-top:14px">
             <strong>Stage Privacy Rule</strong>
             Individual investor responses are stored securely in Supabase and aggregated before publishing. Individual votes are never streamed to public screens.
@@ -1852,6 +1871,99 @@
   }
 
   /* ══════════════════════════════════════════════════════════════
+     DATA EXPORT & BACKUPS (Real-Time Admin & Audit Trails)
+     ══════════════════════════════════════════════════════════════ */
+  function exportResponsesCSV() {
+    const responses = adminLiveStats.responses.length > 0 ? adminLiveStats.responses : [];
+    const investorsMap = new Map();
+    (adminLiveStats.investors || []).forEach(inv => {
+      investorsMap.set(inv.investor_key, inv);
+    });
+
+    const headers = ['Startup ID', 'Startup Number', 'Startup Name', 'Investor Name', 'Investor Email', 'Response Type', 'Recorded At', 'Data Source'];
+    const rows = [];
+
+    if (responses.length > 0) {
+      responses.forEach(r => {
+        const inv = investorsMap.get(r.investor_key) || { full_name: 'Registered Investor', email: r.investor_key };
+        const s = startups.find(st => st.id === r.startup_id) || { n: '-', name: r.startup_id };
+        rows.push([
+          `"${r.startup_id || ''}"`,
+          `"${s.n || ''}"`,
+          `"${(s.name || '').replace(/"/g, '""')}"`,
+          `"${(inv.full_name || '').replace(/"/g, '""')}"`,
+          `"${(inv.email || '').replace(/"/g, '""')}"`,
+          `"${r.response_type || r.response || ''}"`,
+          `"${r.recorded_at || ''}"`,
+          `"Supabase Cloud Realtime"`
+        ]);
+      });
+    } else {
+      // Local fallback
+      Object.entries(state.responseByInvestor).forEach(([invKey, respObj]) => {
+        Object.entries(respObj).forEach(([startupId, item]) => {
+          const s = startups.find(st => st.id === startupId) || { n: '-', name: startupId };
+          rows.push([
+            `"${startupId}"`,
+            `"${s.n || ''}"`,
+            `"${(s.name || '').replace(/"/g, '""')}"`,
+            `"Local Session"`,
+            `"${invKey}"`,
+            `"${item.response || item.response_type || ''}"`,
+            `"${item.recordedAt || ''}"`,
+            `"Local Device Storage"`
+          ]);
+        });
+      });
+    }
+
+    if (rows.length === 0) {
+      toast('No votes have been recorded yet to export.');
+      return;
+    }
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    link.setAttribute('download', `demo-day-votes-${timestamp}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast(`✓ Exported ${rows.length} votes to CSV!`);
+  }
+
+  function exportEventJSON() {
+    const backupData = {
+      exportedAt: new Date().toISOString(),
+      eventTitle: orgState.eventTitle || 'AFF Demo Day 2026',
+      organisation: orgState.name || 'Asian Founders Fund (AFF)',
+      leadEmail: orgState.leadEmail || '',
+      currentPitch: state.pitch,
+      eventStatus: state.eventStatus,
+      stageStatus: state.stageStatus,
+      publishedResults: state.published,
+      startupsCount: startups.length,
+      startups: startups,
+      registeredInvestors: adminLiveStats.investors,
+      allResponses: adminLiveStats.responses,
+      localStateSnapshot: state,
+      auditLog: state.adminAudit || []
+    };
+
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(backupData, null, 2));
+    const link = document.createElement('a');
+    link.setAttribute('href', dataStr);
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    link.setAttribute('download', `demo-day-backup-${timestamp}.json`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast('✓ Complete event JSON backup downloaded!');
+  }
+
+  /* ══════════════════════════════════════════════════════════════
      EVENT BINDINGS
      ══════════════════════════════════════════════════════════════ */
   function bind() {
@@ -1891,6 +2003,8 @@
       if (action === 'back-list') backToList();
       if (action === 'switch-account') switchInvestorAccount();
       if (action === 'org-admin-login') showAdminLock();
+      if (action === 'export-csv') exportResponsesCSV();
+      if (action === 'export-json') exportEventJSON();
       if (action === 'scroll-create-org') {
         const sec = document.getElementById('org-create-section');
         if (sec) sec.scrollIntoView({ behavior: 'smooth' });
