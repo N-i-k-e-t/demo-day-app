@@ -7,10 +7,21 @@
   <meta name="description" content="Mobile-first startup demo investor response experience with immutable response recording and admin-controlled stage publishing.">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+  <link rel="apple-touch-icon" href="assets/icon.svg">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="styles.css">
-  <title>Startup Demo — Investor Experience</title>
-  <!-- Supabase JS Client -->
+  <title>Startup Demo — Live Pitch OS</title>
+  
+  <!-- Open Graph / Social Sharing -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="AFF Demo Day 2026 — Live Pitch Experience">
+  <meta property="og:description" content="Mobile-first startup demo investor response system with immutable recording and real-time stage sync.">
+  <meta property="og:image" content="assets/icon.svg">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- Production Runtime Config & Supabase Client -->
+  <script src="config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
@@ -20,8 +31,6 @@
         <div class="brand-lockup"><div class="brand-mark">✦</div><div><strong>AFF DemoDay</strong><span>Live Pitch OS</span></div></div>
         <button data-route="org" class="nav-btn active">🏛️ Organisation Portal</button>
         <button data-route="investor" class="nav-btn">📱 Investor Experience</button>
-        <button data-route="stage" class="nav-btn">📺 Main Stage</button>
-        <button data-route="references" class="nav-btn">🖼️ UI References</button>
         <div class="admin-nav-item" style="margin-top:auto;padding-top:14px;border-top:1px solid rgba(255,255,255,0.1)">
           <button data-route="admin" class="nav-btn" style="opacity:0.75;font-size:12px">🔒 Organiser Admin</button>
         </div>

@@ -1,0 +1,14 @@
+.git
+.github
+.claude
+.cursor
+.vibecheck
+.kilo
+tests
+workflows
+docs
+live_pitch_updated_package
+node_modules
+*.md
+.DS_Store
+*.sh

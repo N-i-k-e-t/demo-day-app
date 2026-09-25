@@ -1,9 +1,20 @@
 {
-  "name": "Startup Demo Investor Experience",
-  "short_name": "Startup Demo",
+  "name": "AFF Demo Day 2026 — Live Pitch",
+  "short_name": "AFF DemoDay",
+  "description": "Mobile-first investor response system with immutable recording and real-time stage sync.",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#f5f7fb",
-  "theme_color": "#ffffff",
-  "icons": []
+  "orientation": "portrait-primary",
+  "background_color": "#090d16",
+  "theme_color": "#0f172a",
+  "categories": ["business", "finance", "productivity"],
+  "icons": [
+    {
+      "src": "assets/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }

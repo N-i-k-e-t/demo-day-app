@@ -4,8 +4,9 @@
   /* ══════════════════════════════════════════════════════════════
      SUPABASE CONNECTION & REALTIME CONFIG
      ══════════════════════════════════════════════════════════════ */
-  const SUPABASE_URL = 'https://toucgwdalgtkcfhebvgo.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRvdWNnd2RhbGd0a2NmaGVidmdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyNzIzNzQsImV4cCI6MjEwNTg0ODM3NH0.YOpoQ6lzRgeicJvsiC4Zun78jvYtW7_TzCFosaG0HZQ';
+  const cfg = (typeof window !== 'undefined' && (window.APP_CONFIG || window.__ENV__)) || {};
+  const SUPABASE_URL = cfg.SUPABASE_URL || 'https://toucgwdalgtkcfhebvgo.supabase.co';
+  const SUPABASE_ANON_KEY = cfg.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRvdWNnd2RhbGd0a2NmaGVidmdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyNzIzNzQsImV4cCI6MjEwNTg0ODM3NH0.YOpoQ6lzRgeicJvsiC4Zun78jvYtW7_TzCFosaG0HZQ';
 
   let supabase = null;
   try {
@@ -208,13 +209,51 @@
     return Array.from(arr, b => b.toString(16).padStart(2, '0')).join('');
   }
 
+  const SAVED_ACCOUNTS_KEY = 'startup-demo-saved-investors-v2';
+
+  function getSavedAccounts() {
+    try {
+      const data = JSON.parse(localStorage.getItem(SAVED_ACCOUNTS_KEY));
+      if (Array.isArray(data)) return data;
+    } catch (e) {
+      console.warn('[Accounts] Read note:', e);
+    }
+    return [];
+  }
+
+  function saveAccountProfile(acc) {
+    if (!acc || !acc.email) return;
+    const list = getSavedAccounts();
+    const cleanEmail = acc.email.trim().toLowerCase();
+    const existingIdx = list.findIndex(a => a.email.toLowerCase() === cleanEmail);
+    const updated = {
+      investorKey: acc.id || acc.investorKey,
+      name: acc.name,
+      email: cleanEmail,
+      lastActive: new Date().toISOString()
+    };
+    if (existingIdx >= 0) {
+      list[existingIdx] = { ...list[existingIdx], ...updated };
+    } else {
+      list.unshift(updated);
+    }
+    try {
+      localStorage.setItem(SAVED_ACCOUNTS_KEY, JSON.stringify(list.slice(0, 8)));
+    } catch (e) {
+      console.warn('[Accounts] Save note:', e);
+    }
+  }
+
   function makeInvestorKey(email) {
     const clean = (email || '').trim().toLowerCase();
-    try {
-      return 'inv_' + btoa(unescape(encodeURIComponent(clean))).replace(/[^a-zA-Z0-9]/g, '').slice(0, 24);
-    } catch (_) {
-      return 'inv_' + clean.replace(/[^a-zA-Z0-9]/g, '').slice(0, 24);
+    let hash = 5381;
+    for (let i = 0; i < clean.length; i++) {
+      hash = ((hash << 5) + hash) + clean.charCodeAt(i);
+      hash |= 0;
     }
+    const safePrefix = clean.split('@')[0].replace(/[^a-zA-Z0-9]/g, '').slice(0, 16) || 'investor';
+    const safeDomain = (clean.split('@')[1] || '').replace(/[^a-zA-Z0-9]/g, '').slice(0, 12) || 'fund';
+    return `inv_${safePrefix}_${safeDomain}_${Math.abs(hash).toString(36)}`;
   }
 
   /* ══════════════════════════════════════════════════════════════
@@ -423,54 +462,74 @@
   }
 
   /* ══════════════════════════════════════════════════════════════
-     PASSWORDLESS USER SIGNUP & SESSION MANAGEMENT
+     PASSWORDLESS USER SIGNUP & SAFE MULTI-LOGIN (No Overrides)
      ══════════════════════════════════════════════════════════════ */
-  async function joinEvent() {
-    const nameInput = document.getElementById('join-name');
-    const emailInput = document.getElementById('join-email');
-    const name = nameInput?.value.trim();
-    const email = emailInput?.value.trim();
+  async function performLogin(name, email) {
+    const cleanName = (name || '').trim();
+    const cleanEmail = (email || '').trim().toLowerCase();
 
-    if (!name || name.length < 2) {
+    if (!cleanName || cleanName.length < 2) {
       toast('Please enter your full name.');
-      nameInput?.focus();
+      document.getElementById('join-name')?.focus();
       return;
     }
-    if (!email || !email.includes('@') || !email.includes('.')) {
+    if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
       toast('Please enter a valid work or personal email address.');
-      emailInput?.focus();
+      document.getElementById('join-email')?.focus();
       return;
     }
 
-    const investorKey = makeInvestorKey(email);
-    const sessionToken = generateSecureToken();
+    let investorKey = makeInvestorKey(cleanEmail);
+    let sessionToken = generateSecureToken();
+    let displayName = cleanName;
+
+    // 1. Safe Multi-Login Check: query Supabase if this email was already registered
+    if (supabase) {
+      try {
+        const { data: existingUser } = await supabase
+          .from('demo_investors')
+          .select('investor_key, full_name, email')
+          .eq('email', cleanEmail)
+          .maybeSingle();
+
+        if (existingUser?.investor_key) {
+          investorKey = existingUser.investor_key;
+          if (!displayName && existingUser.full_name) {
+            displayName = existingUser.full_name;
+          }
+        }
+      } catch (err) {
+        console.warn('[Login] Existing user lookup note:', err);
+      }
+    }
 
     session = {
       id: investorKey,
-      name,
-      email,
+      name: displayName,
+      email: cleanEmail,
       sessionToken,
       joinedAt: new Date().toISOString()
     };
     saveSession();
+    saveAccountProfile(session);
 
+    // Ensure bucket exists in local state without wiping out any previous data
     if (!state.responseByInvestor[session.id]) {
       state.responseByInvestor[session.id] = {};
     }
 
-    audit('INVESTOR_JOINED', `${name} (${email}) joined the event`, 'SYSTEM');
+    audit('INVESTOR_JOINED', `${displayName} (${cleanEmail}) signed in`, 'SYSTEM');
     broadcast();
     investorScreen = 'list';
     renderAll();
-    toast(`Welcome, ${name} — Passwordless account activated.`);
 
     // Persist via Outbox (Guaranteed delivery even with offline or weak network)
     enqueueOutbox({
       type: 'REGISTER_INVESTOR',
       payload: {
         investorKey,
-        fullName: name,
-        email,
+        fullName: displayName,
+        email: cleanEmail,
         sessionToken,
         joinedAt: session.joinedAt
       }
@@ -478,13 +537,24 @@
 
     recordFeed('INVESTOR_JOINED', {
       actorId: investorKey,
-      actorName: name,
-      actorEmail: email,
-      detail: `${name} registered passwordlessly`
+      actorName: displayName,
+      actorEmail: cleanEmail,
+      detail: `${displayName} logged in (${cleanEmail})`
     });
 
-    // Check if this user had previous responses stored in Supabase to restore
-    await restoreResponsesFromSupabase();
+    // 2. Safely restore all previous votes from Supabase (prevents overrides!)
+    const restored = await restoreResponsesFromSupabase(investorKey);
+    if (restored > 0) {
+      toast(`✓ Welcome back, ${displayName}! Restored ${restored} previous votes.`);
+    } else {
+      toast(`✓ Welcome, ${displayName} — Ready to cast your live votes.`);
+    }
+  }
+
+  async function joinEvent() {
+    const nameInput = document.getElementById('join-name');
+    const emailInput = document.getElementById('join-email');
+    await performLogin(nameInput?.value, emailInput?.value);
   }
 
   async function restoreSessionFromSupabase() {
@@ -510,16 +580,17 @@
     }
   }
 
-  async function restoreResponsesFromSupabase() {
-    if (!supabase || !session?.id) return;
+  async function restoreResponsesFromSupabase(targetKey) {
+    const key = targetKey || session?.id;
+    if (!supabase || !key) return 0;
     try {
       const { data, error } = await supabase
         .from('demo_responses')
         .select('startup_id, startup_name, response_type, recorded_at, idempotency_key')
-        .eq('investor_key', session.id);
+        .eq('investor_key', key);
 
       if (!error && data && data.length > 0) {
-        const bucket = state.responseByInvestor[session.id] || (state.responseByInvestor[session.id] = {});
+        const bucket = state.responseByInvestor[key] || (state.responseByInvestor[key] = {});
         let newRestored = 0;
         data.forEach(r => {
           if (!bucket[r.startup_id]) {
@@ -537,10 +608,12 @@
           renderAll();
           console.log(`[Session] Restored ${newRestored} previous responses from cloud.`);
         }
+        return data.length;
       }
     } catch (err) {
       console.warn('[Session] Response restore failed:', err);
     }
+    return 0;
   }
 
   function switchInvestorAccount() {
@@ -549,7 +622,7 @@
       localStorage.removeItem(SESSION_KEY);
       investorScreen = 'join';
       renderInvestor();
-      toast('Signed out. Enter your details to log in passwordlessly.');
+      toast('Signed out. Select a saved investor profile or enter new credentials.');
     }
   }
 
@@ -1065,20 +1138,46 @@
   }
 
   function renderJoin() {
+    const saved = getSavedAccounts();
+    const hasSaved = saved.length > 0;
+
     return `${renderHeader()}<main class="phone-content" style="display:flex;flex-direction:column;justify-content:center">
-      <section class="hero-card">
-        <div class="hero-logo">Join Startup Demo</div>
-        <h2>Welcome, Investors.</h2>
-        <p>Passwordless access — enter your name and email to immediately join the live pitching session.</p>
+      <section class="hero-card" style="margin-bottom:12px">
+        <div class="hero-logo">Investor Voting Hub</div>
+        <h2>Welcome to ${orgState.eventTitle || 'AFF Demo Day 2026'}</h2>
+        <p>Passwordless voting — sign in to score all 15 startups live. Your credentials and scores are preserved safely across sessions.</p>
       </section>
-      <label class="detail-label">Full Name</label>
-      <input id="join-name" class="input" placeholder="e.g. Sarah Jenkins" style="margin:6px 0 12px" autocomplete="name">
-      <label class="detail-label">Work / Personal Email</label>
-      <input id="join-email" class="input" placeholder="e.g. sarah@sequoia.com" type="email" style="margin:6px 0 12px" autocomplete="email">
-      <button class="primary-cta" data-action="join">Enter Live Event</button>
-      <div class="notice">
-        <strong>⚡ Passwordless & Offline Resilient</strong>
-        No password required. Your encrypted session is saved to your phone. Even on poor connectivity, your votes are recorded safely without data loss.
+
+      ${hasSaved ? `
+        <div class="saved-accounts-section" style="margin-bottom:14px">
+          <div class="detail-label" style="margin-bottom:8px;font-weight:800;color:#64748b">CONTINUE AS SAVED INVESTOR</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            ${saved.map(acc => `
+              <div class="saved-account-card" data-action="fast-login" data-email="${acc.email}" data-name="${acc.name}">
+                <div class="avatar-mini" style="width:34px;height:34px;font-size:14px;background:#e0e7ff;color:#3730a3;border-radius:50%;display:grid;place-items:center;font-weight:900;flex-shrink:0">${acc.name.charAt(0).toUpperCase()}</div>
+                <div style="flex:1;min-width:0;text-align:left">
+                  <strong style="font-size:13px;display:block;color:var(--ink)">${acc.name}</strong>
+                  <span style="font-size:11px;color:#64748b;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${acc.email}</span>
+                </div>
+                <button class="chip active" style="font-size:11px;padding:6px 12px">Login →</button>
+              </div>
+            `).join('')}
+          </div>
+          <div style="text-align:center;margin:14px 0 10px;font-size:11px;font-weight:700;color:#94a3b8">— OR SIGN IN WITH ANOTHER EMAIL —</div>
+        </div>
+      ` : ''}
+
+      <div class="login-inputs-wrap">
+        <label class="detail-label">Full Name</label>
+        <input id="join-name" class="input" placeholder="e.g. Sarah Jenkins" style="margin:6px 0 12px" autocomplete="name">
+        <label class="detail-label">Work / Personal Email</label>
+        <input id="join-email" class="input" placeholder="e.g. sarah@sequoia.com" type="email" style="margin:6px 0 12px" autocomplete="email">
+        <button class="primary-cta" data-action="join">Enter Live Event →</button>
+      </div>
+
+      <div class="notice" style="margin-top:14px">
+        <strong>⚡ Multi-Login & Zero Override Protection</strong>
+        Your account is uniquely tied to your email address. Multiple investors with identical names or multiple devices will never overwrite each other's score records.
       </div>
     </main>`;
   }

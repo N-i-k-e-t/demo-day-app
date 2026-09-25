@@ -1,0 +1,6 @@
+{
+  "status": "healthy",
+  "service": "demo-day-app",
+  "version": "2.1.0",
+  "environment": "production"
+}

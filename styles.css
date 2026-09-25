@@ -116,6 +116,11 @@ img{max-width:100%;height:auto}
 .account-chip:hover{background:#e2e8f0}
 .account-chip .avatar-mini{width:18px;height:18px;border-radius:50%;background:#3b82f6;color:#fff;display:grid;place-items:center;font-size:10px;font-weight:800}
 
+/* ── Saved Account Card (Fast Login) ── */
+.saved-account-card{display:flex;align-items:center;gap:10px;background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:10px 12px;cursor:pointer;transition:.15s;text-align:left}
+.saved-account-card:hover{border-color:#2563eb;background:#f0f7ff}
+.saved-account-card:active{transform:scale(.99)}
+
 /* ── Responsive adjustments ── */
 @media(max-width:768px){
   .admin-hero-top{flex-direction:column}
