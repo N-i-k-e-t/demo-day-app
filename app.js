@@ -83,6 +83,7 @@
   let route = 'investor';
   let startupFilter = 'all';
   let toastTimer = null;
+  let pendingChoice = null;
 
   // Live Admin Data (Maintained live via Supabase Realtime + smart polling)
   let adminLiveStats = {
@@ -902,6 +903,7 @@
     if (!ensureInvestor()) return;
     selectedStartup = startups.find(s => s.id === id) || null;
     if (!selectedStartup) return;
+    pendingChoice = null;
     investorScreen = 'detail';
     renderInvestor();
 
@@ -917,6 +919,7 @@
     const current = responseFor(selectedStartup.id);
     if (current) {
       toast('Response already recorded.');
+      pendingChoice = null;
       investorScreen = 'list';
       renderInvestor();
       return;
@@ -938,12 +941,24 @@
     state.investorResponses += 1;
     state.stateVersion += 1;
     lastSubmitted = selectedStartup;
+    pendingChoice = null;
     investorScreen = 'confirmation';
 
     audit('RESPONSE_RECORDED', `${session.name} → ${selectedStartup.name}: ${choice}`, 'INVESTOR');
+
+    // Push immediately to realtime activity stream on admin screen
+    pushRealtimeStreamItem({
+      type: 'RESPONSE_SUBMITTED',
+      actor: session.name,
+      startup: selectedStartup.name,
+      response: choice,
+      detail: `${session.name} voted ${responseLabel(choice)} on ${selectedStartup.name}`,
+      time: new Date()
+    });
+
     broadcast();
     renderAll();
-    toast('Response saved securely.');
+    toast('✓ Response saved securely.');
 
     // 2. Queue into Durable Outbox for guaranteed zero-loss delivery to cloud
     enqueueOutbox({
@@ -968,6 +983,7 @@
 
   function backToList() {
     selectedStartup = null;
+    pendingChoice = null;
     investorScreen = 'list';
     renderInvestor();
   }
@@ -1089,26 +1105,47 @@
         </div>
       </section>
       <div class="response-stack">
-        <button class="response-btn green" data-response="INTERESTED">
+        <button class="response-btn green ${pendingChoice === 'INTERESTED' ? 'selected' : ''}" data-select-response="INTERESTED">
           <span class="response-icon">👍</span>
           <span><strong>I am interested</strong><span>Request founder introduction & follow-up deck.</span></span>
-          <span style="margin-left:auto">›</span>
+          ${pendingChoice === 'INTERESTED' ? '<span class="selected-indicator"><span>✓ Selected</span></span>' : '<span style="margin-left:auto;color:#8fa0bb">›</span>'}
         </button>
-        <button class="response-btn yellow" data-response="EXPLORE">
+        <button class="response-btn yellow ${pendingChoice === 'EXPLORE' ? 'selected' : ''}" data-select-response="EXPLORE">
           <span class="response-icon">?</span>
           <span><strong>Would like to explore more</strong><span>Have questions or want deeper diligence info.</span></span>
-          <span style="margin-left:auto">›</span>
+          ${pendingChoice === 'EXPLORE' ? '<span class="selected-indicator"><span>✓ Selected</span></span>' : '<span style="margin-left:auto;color:#8fa0bb">›</span>'}
         </button>
-        <button class="response-btn blue" data-response="NOT_INTERESTED">
+        <button class="response-btn blue ${pendingChoice === 'NOT_INTERESTED' ? 'selected' : ''}" data-select-response="NOT_INTERESTED">
           <span class="response-icon">👎</span>
           <span><strong>Not interested</strong><span>Not a fit for our current investment mandate.</span></span>
-          <span style="margin-left:auto">›</span>
+          ${pendingChoice === 'NOT_INTERESTED' ? '<span class="selected-indicator"><span>✓ Selected</span></span>' : '<span style="margin-left:auto;color:#8fa0bb">›</span>'}
         </button>
       </div>
-      <div class="notice">
-        <strong>🔒 Immutable & Offline-Resilient</strong>
-        Your response is saved instantly to your device and synchronized to the cloud. It cannot be altered after submission.
-      </div>
+
+      ${pendingChoice ? `
+        <div class="confirm-box ${COLORS[pendingChoice]}">
+          <div class="confirm-box-header">
+            <span class="confirm-badge">Step 2: Confirm Selection</span>
+            <span style="font-size:11px;color:#94a3b8">Prevents accidental taps</span>
+          </div>
+          <div class="confirm-choice-label ${COLORS[pendingChoice]}">
+            <span>${responseIcon(pendingChoice)}</span>
+            <span>${responseLabel(pendingChoice)}</span>
+          </div>
+          <p class="confirm-desc">Are you sure you want to submit this response for <strong>${s.name}</strong>? Once confirmed, this response cannot be changed.</p>
+          <div class="confirm-btn-row">
+            <button class="btn-cancel-choice" data-action="cancel-choice">✕ Change Choice</button>
+            <button class="btn-submit-choice ${COLORS[pendingChoice]}" data-action="confirm-submit">
+              ✓ Submit Response
+            </button>
+          </div>
+        </div>
+      ` : `
+        <div class="notice" style="margin-top:12px">
+          <strong>🔒 2-Step Safe Voting</strong>
+          Tap any of the 3 options above to select it. You will be prompted to confirm your submission to avoid accidental mis-touches.
+        </div>
+      `}
     </main>${renderBottomNav('startups')}`;
   }
 
@@ -1333,11 +1370,14 @@
             <button class="admin-btn" style="background:#eef1f6" data-admin="reset">Reset Demo</button>
           </div>
           <div style="margin-top:16px;padding-top:14px;border-top:1px solid #edf2f7">
-            <h4 style="margin:0 0 10px;font-size:13px;color:var(--ink)">Real-Time Data Backups & Exports</h4>
+            <h4 style="margin:0 0 10px;font-size:13px;color:var(--ink)">Real-Time Data Backups & Session Reset</h4>
             <div class="admin-btns">
               <button class="admin-btn green" data-action="export-csv">📥 Export All Votes (CSV)</button>
               <button class="admin-btn blue" data-action="export-json">💾 Download Event Backup (JSON)</button>
               <button class="admin-btn" style="background:#eef1f6" data-admin="refresh-data">🔄 Force Cloud Sync</button>
+              <button class="admin-btn red" data-action="reset-session" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-weight:850">
+                🔄 Reset & Start New Session (Auto-CSV Download)
+              </button>
             </div>
           </div>
           <div class="notice" style="margin-top:14px">
@@ -1959,7 +1999,7 @@
 
     if (rows.length === 0) {
       toast('No votes have been recorded yet to export.');
-      return;
+      return 0;
     }
 
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
@@ -1972,6 +2012,75 @@
     link.click();
     document.body.removeChild(link);
     toast(`✓ Exported ${rows.length} votes to CSV!`);
+    return rows.length;
+  }
+
+  async function resetAndArchiveSession() {
+    if (!adminUnlocked) {
+      showAdminLock();
+      return;
+    }
+
+    const totalVotes = (adminLiveStats.responses && adminLiveStats.responses.length) ||
+      Object.values(state.responseByInvestor).reduce((acc, cur) => acc + Object.keys(cur || {}).length, 0);
+
+    const confirmMsg = totalVotes > 0
+      ? `Archive current session and initialize a new session?\n\n✓ All ${totalVotes} recorded vote(s) will be automatically saved and downloaded to CSV first.\n✓ Active responses will then be cleared to start fresh for pitch 1.`
+      : 'Start a new session and reset active event state to pitch 1?';
+
+    if (!confirm(confirmMsg)) return;
+
+    // 1. Export CSV first if votes exist
+    if (totalVotes > 0) {
+      exportResponsesCSV();
+      toast('📥 Session CSV downloaded to your device!');
+    }
+
+    // 2. Archive local snapshot
+    try {
+      const archiveId = 'startup-demo-archive-' + Date.now();
+      localStorage.setItem(archiveId, JSON.stringify({
+        archivedAt: new Date().toISOString(),
+        eventTitle: orgState.eventTitle || 'AFF Demo Day 2026',
+        totalVotes,
+        investors: adminLiveStats.investors,
+        responses: adminLiveStats.responses,
+        localResponses: state.responseByInvestor,
+        publishedResults: state.published
+      }));
+    } catch (e) {
+      console.warn('[Archive] Snapshot note:', e);
+    }
+
+    // 3. Clear cloud responses in Supabase for the fresh session
+    if (supabase) {
+      try {
+        await supabase.from('demo_responses').delete().neq('id', 0);
+      } catch (err) {
+        console.warn('[Archive] Cloud delete warning:', err);
+      }
+    }
+
+    // 4. Reset runtime & local state
+    state.pitch = 1;
+    state.responseByInvestor = {};
+    state.published = {};
+    state.stageStatus = 'STANDBY';
+    state.eventStatus = 'READY';
+    state.investorResponses = 0;
+    saveState();
+
+    adminLiveStats.responses = [];
+    localStorage.removeItem('startup-demo-admin-backup-v2');
+
+    audit('SESSION_RESET_AND_ARCHIVED', `Session reset: ${totalVotes} votes exported to CSV; fresh session ready`);
+    recordFeed('SESSION_RESET', {
+      detail: `Admin reset session. ${totalVotes} votes exported to CSV.`
+    });
+
+    broadcast();
+    renderAll();
+    toast('✓ Previous session archived & CSV saved! New session started.');
   }
 
   function exportEventJSON() {
@@ -2014,6 +2123,13 @@
       const startup = e.target.closest('[data-startup]');
       if (startup) openStartup(startup.dataset.startup);
 
+      const selectBtn = e.target.closest('[data-select-response]');
+      if (selectBtn) {
+        pendingChoice = selectBtn.dataset.selectResponse;
+        renderInvestor();
+        return;
+      }
+
       const response = e.target.closest('[data-response]');
       if (response) submitResponse(response.dataset.response);
 
@@ -2041,6 +2157,16 @@
       const action = e.target.closest('[data-action]')?.dataset.action;
       if (action === 'join') joinEvent();
       if (action === 'back-list') backToList();
+      if (action === 'cancel-choice') {
+        pendingChoice = null;
+        renderInvestor();
+      }
+      if (action === 'confirm-submit') {
+        if (pendingChoice) {
+          submitResponse(pendingChoice);
+        }
+      }
+      if (action === 'reset-session') resetAndArchiveSession();
       if (action === 'switch-account') switchInvestorAccount();
       if (action === 'org-admin-login') showAdminLock();
       if (action === 'export-csv') exportResponsesCSV();
