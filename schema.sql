@@ -20,14 +20,17 @@ create table if not exists interaction_feed (
   created_at timestamptz not null default now()
 );
 
--- 2. Investor Registrations
+-- 2. Investor Registrations (production sessions)
 create table if not exists demo_investors (
   id bigint generated always as identity primary key,
   investor_key text not null unique,
   full_name text not null,
   email text not null,
+  session_token text,
+  last_active timestamptz,
   joined_at timestamptz not null default now()
 );
+
 
 -- 3. Investor Responses (immutable, one per investor per startup)
 create table if not exists demo_responses (

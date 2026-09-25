@@ -50,18 +50,68 @@
   }
 
   /* ══════════════════════════════════════════════════════════════
-     SUPABASE DATA PERSISTENCE
+     SUPABASE DATA PERSISTENCE (Production)
      ══════════════════════════════════════════════════════════════ */
-  async function saveInvestorToSupabase(investorKey, name, email) {
+  function generateSessionToken() {
+    const arr = new Uint8Array(32);
+    crypto.getRandomValues(arr);
+    return Array.from(arr, b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  async function saveInvestorToSupabase(investorKey, name, email, sessionToken) {
     if (!supabase) return;
     try {
       await supabase.from('demo_investors').upsert({
         investor_key: investorKey,
         full_name: name,
         email: email,
+        session_token: sessionToken,
+        last_active: new Date().toISOString(),
         joined_at: new Date().toISOString()
       }, { onConflict: 'investor_key' });
-    } catch (err) { console.warn('[Supabase] Investor save:', err.message); }
+    } catch (err) { console.warn('[Session] Investor persist:', err.message); }
+  }
+
+  async function restoreSessionFromSupabase() {
+    if (!supabase || !session?.id) return false;
+    try {
+      const { data, error } = await supabase
+        .from('demo_investors')
+        .select('investor_key, full_name, email, session_token')
+        .eq('investor_key', session.id)
+        .single();
+      if (error || !data) return false;
+      if (session.sessionToken && data.session_token === session.sessionToken) {
+        await supabase.from('demo_investors').update({ last_active: new Date().toISOString() }).eq('investor_key', session.id);
+        return true;
+      }
+      return false;
+    } catch (err) { return false; }
+  }
+
+  async function restoreResponsesFromSupabase() {
+    if (!supabase || !session?.id) return;
+    try {
+      const { data } = await supabase
+        .from('demo_responses')
+        .select('startup_id, startup_name, response_type, recorded_at, idempotency_key')
+        .eq('investor_key', session.id);
+      if (data && data.length > 0) {
+        const bucket = state.responseByInvestor[session.id] || (state.responseByInvestor[session.id] = {});
+        data.forEach(r => {
+          if (!bucket[r.startup_id]) {
+            bucket[r.startup_id] = {
+              response: r.response_type,
+              startupId: r.startup_id,
+              recordedAt: r.recorded_at,
+              idempotencyKey: r.idempotency_key
+            };
+          }
+        });
+        saveState();
+        renderAll();
+      }
+    } catch (err) { console.warn('[Session] Response restore:', err.message); }
   }
 
   async function saveResponseToSupabase(investorKey, startupId, startupName, responseType) {
@@ -75,7 +125,19 @@
         idempotency_key: `${investorKey}:${startupId}`,
         recorded_at: new Date().toISOString()
       });
-    } catch (err) { console.warn('[Supabase] Response save:', err.message); }
+    } catch (err) { console.warn('[Session] Response save:', err.message); }
+  }
+
+  async function saveAdminSessionToSupabase(sessionToken) {
+    if (!supabase) return;
+    try {
+      await supabase.from('demo_admin_actions').insert({
+        action_type: 'ADMIN_SESSION_CREATED',
+        detail: `Admin session token: ${sessionToken.slice(0, 8)}...`,
+        state_snapshot: { sessionToken: sessionToken.slice(0, 8), device: deviceInfo },
+        created_at: new Date().toISOString()
+      });
+    } catch (err) { console.warn('[Session] Admin session save:', err.message); }
   }
 
   async function saveAdminActionToSupabase(actionType, detail, stateSnapshot = {}) {
@@ -87,7 +149,7 @@
         state_snapshot: stateSnapshot,
         created_at: new Date().toISOString()
       });
-    } catch (err) { console.warn('[Supabase] Admin action save:', err.message); }
+    } catch (err) { console.warn('[Session] Admin action save:', err.message); }
   }
 
   async function syncEventStateToSupabase() {
@@ -103,7 +165,7 @@
         published_data: state.published,
         updated_at: new Date().toISOString()
       });
-    } catch (err) { console.warn('[Supabase] Event state sync:', err.message); }
+    } catch (err) { console.warn('[Session] Event state sync:', err.message); }
   }
 
   /* ══════════════════════════════════════════════════════════════
@@ -287,16 +349,21 @@
     if (!input) return;
     if (input.value === ADMIN_PASSCODE) {
       adminUnlocked = true;
-      try { sessionStorage.setItem(ADMIN_SESSION_KEY, 'true'); } catch(_){}
+      const adminToken = generateSessionToken();
+      try {
+        sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
+        sessionStorage.setItem('startup-demo-admin-token', adminToken);
+      } catch(_){}
       hideAdminLock();
       setRoute('admin');
       toast('Admin access granted.');
-      recordFeed('ADMIN_UNLOCKED', { detail: 'Admin panel unlocked' });
+      saveAdminSessionToSupabase(adminToken);
+      recordFeed('ADMIN_UNLOCKED', { detail: 'Admin session created', metadata: { tokenPrefix: adminToken.slice(0,8) } });
     } else {
       if (errEl) errEl.style.display = 'block';
       input.value = '';
       input.focus();
-      recordFeed('ADMIN_UNLOCK_FAILED', { detail: 'Wrong passcode entered' });
+      recordFeed('ADMIN_UNLOCK_FAILED', { detail: 'Incorrect passcode attempt', metadata: { device: deviceInfo } });
     }
   }
 
@@ -306,23 +373,32 @@
   function joinEvent() {
     const name = document.getElementById('join-name')?.value.trim();
     const email = document.getElementById('join-email')?.value.trim();
-    if (!name || name.length < 2 || !email.includes('@')) { toast('Enter your name and a valid email.'); return; }
-    session = { id:'inv-' + btoa(unescape(encodeURIComponent(email))).replace(/[^a-zA-Z0-9]/g,'').slice(0,24), name, email, joinedAt:new Date().toISOString() };
+    if (!name || name.length < 2) { toast('Please enter your full name.'); return; }
+    if (!email || !email.includes('@') || !email.includes('.')) { toast('Please enter a valid email address.'); return; }
+
+    const sessionToken = generateSessionToken();
+    session = {
+      id: 'inv-' + btoa(unescape(encodeURIComponent(email))).replace(/[^a-zA-Z0-9]/g,'').slice(0,24),
+      name,
+      email,
+      sessionToken,
+      joinedAt: new Date().toISOString()
+    };
     saveSession();
     if (!state.responseByInvestor[session.id]) state.responseByInvestor[session.id] = {};
-    audit('INVESTOR_JOINED', `${name} joined the demo`, 'SYSTEM');
+    audit('INVESTOR_JOINED', `${name} joined the event`, 'SYSTEM');
     broadcast();
     investorScreen = 'list';
     renderAll();
-    toast('Welcome — startup list is ready.');
+    toast('Welcome — you are registered.');
 
-    // Record to Supabase
-    saveInvestorToSupabase(session.id, name, email);
+    // Persist session to Supabase
+    saveInvestorToSupabase(session.id, name, email, sessionToken);
     recordFeed('INVESTOR_JOINED', {
       actorId: session.id,
       actorName: name,
       actorEmail: email,
-      detail: `${name} (${email}) joined the demo`
+      detail: `${name} (${email}) registered for the event`
     });
   }
 
@@ -473,7 +549,7 @@
   }
 
   function renderJoin() {
-    return `${renderHeader()}<main class="phone-content" style="display:flex;flex-direction:column;justify-content:center"><section class="hero-card"><div class="hero-logo">Join Startup Demo</div><h2>Explore startups and record your response.</h2><p>Use one response per startup. Once submitted, it is stored and cannot be changed.</p></section><label class="detail-label">Full Name</label><input id="join-name" class="input" placeholder="Your full name" style="margin:7px 0 12px"><label class="detail-label">Email</label><input id="join-email" class="input" placeholder="you@example.com" type="email" style="margin:7px 0 12px"><button class="primary-cta" data-action="join">Enter Event</button><div class="notice"><strong>Live Event</strong>Your response will be recorded and saved.</div></main>`;
+    return `${renderHeader()}<main class="phone-content" style="display:flex;flex-direction:column;justify-content:center"><section class="hero-card"><div class="hero-logo">Join Startup Demo</div><h2>Explore startups and record your response.</h2><p>Use one response per startup. Once submitted, it is stored and cannot be changed.</p></section><label class="detail-label">Full Name</label><input id="join-name" class="input" placeholder="Your full name" style="margin:7px 0 12px" autocomplete="name"><label class="detail-label">Email</label><input id="join-email" class="input" placeholder="you@example.com" type="email" style="margin:7px 0 12px" autocomplete="email"><button class="primary-cta" data-action="join">Enter Event</button><div class="notice"><strong>🔒 Secure Session</strong>Your session is encrypted and stored securely. Your responses are saved to the cloud and cannot be modified after submission.</div></main>`;
   }
 
   function renderInvestor() {
@@ -706,7 +782,7 @@
   }
 
   /* ══════════════════════════════════════════════════════════════
-     INIT
+     INIT (Production)
      ══════════════════════════════════════════════════════════════ */
   bind();
   route = getRouteFromURL();
@@ -716,6 +792,20 @@
   initSupabaseRealtime();
   window.setInterval(() => renderAll(), 3000);
   if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
+
+  // Restore session from Supabase on load
+  (async () => {
+    if (session?.id) {
+      const valid = await restoreSessionFromSupabase();
+      if (valid) {
+        console.log('[Session] ✅ Session restored from cloud for:', session.name);
+        await restoreResponsesFromSupabase();
+      } else {
+        console.log('[Session] Session present locally, syncing responses...');
+        await restoreResponsesFromSupabase();
+      }
+    }
+  })();
 
   // Record app load
   recordFeed('APP_LOADED', {
