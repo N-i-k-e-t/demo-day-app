@@ -542,5 +542,87 @@ img{max-width:100%;height:auto}
   .org-feature-grid{grid-template-columns:1fr}
 }
 
+/* ── Mobile Single-Viewport Layout for Startup Detail Screen (Non-Scrollable) ── */
+.phone-content.detail-screen-content {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  overflow: hidden !important;
+  max-height: 100% !important;
+  padding-bottom: calc(10px + var(--safe-bottom)) !important;
+}
+
+.detail-screen-content .hero-card {
+  margin: 4px 0 8px !important;
+  padding: 10px 12px !important;
+  border-radius: 16px !important;
+  flex-shrink: 0 !important;
+}
+
+.detail-screen-content .hero-card h2 {
+  font-size: 18px !important;
+  line-height: 1.15 !important;
+  margin: 6px 0 !important;
+}
+
+.detail-screen-content .hero-card p {
+  font-size: 11px !important;
+  margin: 0 0 8px !important;
+  line-height: 1.35 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+.detail-screen-content .hero-visual {
+  height: 75px !important;
+  border-radius: 12px !important;
+}
+
+.detail-screen-content .response-stack {
+  gap: 7px !important;
+  flex-shrink: 0 !important;
+}
+
+.detail-screen-content .response-btn {
+  padding: 10px 11px !important;
+  border-radius: 14px !important;
+}
+
+.detail-screen-content .response-btn .response-icon {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 10px !important;
+  font-size: 17px !important;
+}
+
+.detail-screen-content .response-btn strong {
+  font-size: 13px !important;
+}
+
+.detail-screen-content .response-btn span span {
+  font-size: 9.5px !important;
+}
+
+.detail-screen-content .confirm-box {
+  margin-top: 8px !important;
+  padding: 12px 14px !important;
+  border-radius: 16px !important;
+}
+
+.detail-screen-content .confirm-desc {
+  font-size: 11px !important;
+  margin-bottom: 10px !important;
+}
+
+.detail-screen-content .btn-cancel-choice,
+.detail-screen-content .btn-submit-choice {
+  padding: 10px !important;
+  font-size: 12px !important;
+  border-radius: 12px !important;
+}
+
 
 

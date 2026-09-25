@@ -1084,7 +1084,7 @@
       lastSubmitted = s;
       return renderConfirmationScreen();
     }
-    return `${renderHeader()}<main class="phone-content">
+    return `${renderHeader()}<main class="phone-content detail-screen-content">
       <div class="detail-header">
         <button class="back-btn" data-action="back-list">‹</button>
         <div class="detail-label">Pitch ${s.n} of ${TOTAL_PITCHES}</div>
@@ -1497,8 +1497,17 @@
                   const userExplore = respsToCount.filter(r => (r.response_type || r.response) === RESPONSE.EXPLORE).length;
                   const userNotInterested = respsToCount.filter(r => (r.response_type || r.response) === RESPONSE.NOT_INTERESTED).length;
 
+                  const lastActiveMs = inv.last_active ? (Date.now() - new Date(inv.last_active).getTime()) : 0;
+                  const isSelf = session?.id === inv.investor_key;
+                  const isOnlineNow = isSelf ? (navigator.onLine && netState === 'ONLINE') : (lastActiveMs > 0 && lastActiveMs < 45000);
+                  const connBadge = isOnlineNow
+                    ? '<span class="live-stat-chip green" style="padding:1px 6px;font-size:9px">🟢 Live</span>'
+                    : (lastActiveMs > 0 && lastActiveMs < 180000)
+                    ? '<span class="live-stat-chip yellow" style="padding:1px 6px;font-size:9px">🟡 Idle</span>'
+                    : '<span class="live-stat-chip gray" style="padding:1px 6px;font-size:9px">⚪ Offline</span>';
+
                   return `<tr>
-                    <td><strong>${inv.full_name}</strong></td>
+                    <td><strong>${inv.full_name}</strong> &nbsp; ${connBadge}</td>
                     <td style="color:#64748b">${inv.email}</td>
                     <td>
                       <div class="mini-prog">
