@@ -1,91 +1,86 @@
--- Production data model for Startup Demo / Live Pitch Investor Engagement System
-create table if not exists events (
-  id uuid primary key,
-  name text not null,
-  status text not null default 'READY',
-  current_pitch int not null default 1,
-  state_version bigint not null default 1,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
+-- ============================================================
+-- Supabase Schema for Startup Demo — Live Pitch System
+-- Run this in your Supabase SQL Editor (Dashboard → SQL Editor)
+-- ============================================================
 
-create table if not exists investors (
-  id uuid primary key,
-  event_id uuid not null references events(id),
-  full_name text not null,
-  email text not null,
-  created_at timestamptz not null default now(),
-  unique(event_id, email)
-);
-
-create table if not exists investor_sessions (
-  id uuid primary key,
-  investor_id uuid not null references investors(id),
-  event_id uuid not null references events(id),
-  session_token_hash text not null,
-  created_at timestamptz not null default now(),
-  last_seen_at timestamptz not null default now(),
-  revoked_at timestamptz
-);
-
-create table if not exists pitches (
-  id uuid primary key,
-  event_id uuid not null references events(id),
-  pitch_number int not null,
-  company_name text not null,
-  startup_slide_image text,
-  logo_asset text,
-  duration_seconds int,
-  created_at timestamptz not null default now(),
-  unique(event_id, pitch_number)
-);
-
-create table if not exists responses (
-  id uuid primary key,
-  event_id uuid not null references events(id),
-  investor_id uuid not null references investors(id),
-  pitch_id uuid not null references pitches(id),
-  response_type text not null check(response_type in ('INTERESTED','EXPLORE','NOT_INTERESTED')),
-  idempotency_key text not null,
-  server_timestamp timestamptz not null default now(),
-  unique(event_id, investor_id, pitch_id),
-  unique(idempotency_key)
-);
-
-create table if not exists response_events (
-  id uuid primary key,
-  event_id uuid not null references events(id),
-  investor_id uuid references investors(id),
-  pitch_id uuid references pitches(id),
+-- 1. Interaction Feed — records ALL interactions/events
+create table if not exists interaction_feed (
+  id bigint generated always as identity primary key,
+  event_type text not null,
+  actor_id text,
+  actor_name text,
+  actor_email text,
+  startup_id text,
+  startup_name text,
   response_type text,
-  idempotency_key text,
-  accepted boolean not null,
-  rejection_reason text,
-  server_timestamp timestamptz not null default now()
-);
-
-create table if not exists stage_metric_versions (
-  id uuid primary key,
-  event_id uuid not null references events(id),
-  pitch_id uuid not null references pitches(id),
-  version int not null,
-  interested_pct numeric not null,
-  explore_pct numeric not null,
-  not_interested_pct numeric not null,
-  published_by uuid,
-  published_at timestamptz not null default now(),
-  unique(event_id, pitch_id, version)
-);
-
-create table if not exists admin_actions (
-  id uuid primary key,
-  event_id uuid not null references events(id),
-  admin_id uuid,
-  action_type text not null,
-  payload jsonb not null default '{}'::jsonb,
-  state_version bigint,
+  detail text,
+  metadata jsonb default '{}'::jsonb,
+  device_info text,
+  ip_hint text,
   created_at timestamptz not null default now()
 );
 
-create index if not exists responses_event_pitch_idx on responses(event_id, pitch_id);
-create index if not exists response_events_event_idx on response_events(event_id, server_timestamp desc);
+-- 2. Investor Registrations
+create table if not exists demo_investors (
+  id bigint generated always as identity primary key,
+  investor_key text not null unique,
+  full_name text not null,
+  email text not null,
+  joined_at timestamptz not null default now()
+);
+
+-- 3. Investor Responses (immutable, one per investor per startup)
+create table if not exists demo_responses (
+  id bigint generated always as identity primary key,
+  investor_key text not null,
+  startup_id text not null,
+  startup_name text,
+  response_type text not null check(response_type in ('INTERESTED','EXPLORE','NOT_INTERESTED')),
+  recorded_at timestamptz not null default now(),
+  idempotency_key text not null unique
+);
+
+-- 4. Admin Actions Log
+create table if not exists demo_admin_actions (
+  id bigint generated always as identity primary key,
+  action_type text not null,
+  detail text,
+  state_snapshot jsonb default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+-- 5. Event State (single row, upserted)
+create table if not exists demo_event_state (
+  id int primary key default 1 check (id = 1),
+  event_status text not null default 'READY',
+  current_pitch int not null default 1,
+  state_version bigint not null default 1,
+  total_responses int not null default 0,
+  stage_status text not null default 'STANDBY',
+  published_data jsonb default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
+-- Initialize the single event state row
+insert into demo_event_state (id) values (1) on conflict (id) do nothing;
+
+-- Indexes for fast queries
+create index if not exists idx_feed_created on interaction_feed(created_at desc);
+create index if not exists idx_feed_type on interaction_feed(event_type);
+create index if not exists idx_feed_actor on interaction_feed(actor_id);
+create index if not exists idx_responses_investor on demo_responses(investor_key);
+create index if not exists idx_responses_startup on demo_responses(startup_id);
+
+-- Enable Row Level Security (RLS) - allow anon insert/read for demo
+alter table interaction_feed enable row level security;
+alter table demo_investors enable row level security;
+alter table demo_responses enable row level security;
+alter table demo_admin_actions enable row level security;
+alter table demo_event_state enable row level security;
+
+-- Policies: allow anon key full access for demo
+create policy "Allow all on interaction_feed" on interaction_feed for all using (true) with check (true);
+create policy "Allow all on demo_investors" on demo_investors for all using (true) with check (true);
+create policy "Allow all on demo_responses" on demo_responses for all using (true) with check (true);
+create policy "Allow all on demo_admin_actions" on demo_admin_actions for all using (true) with check (true);
+create policy "Allow all on demo_event_state" on demo_event_state for all using (true) with check (true);

@@ -44,3 +44,13 @@ img{max-width:100%;height:auto}
 .hero-visual img,.startup-card img,.stage-screen img{max-width:100%;height:auto;border-radius:12px}
 .input{width:100%;padding:12px 14px;border-radius:14px;border:2px solid var(--line);font-size:15px;outline:none;transition:.2s;background:#fff;color:var(--ink)}
 .input:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(35,104,246,.1)}
+
+/* ── Admin Links Grid ──────────────────────────────── */
+.links-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.link-item{padding:12px;border-radius:14px;background:#f7f8fc;border:1px solid var(--line)}
+.link-item strong{display:block;font-size:13px;margin-bottom:4px}
+.link-url{font-size:11px;word-break:break-all}
+.link-url a{color:var(--blue);text-decoration:none;font-weight:700}
+.link-url a:hover{text-decoration:underline}
+@media(max-width:640px){.links-grid{grid-template-columns:1fr}}
+

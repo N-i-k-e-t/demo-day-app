@@ -1,7 +1,9 @@
 (() => {
   'use strict';
 
-  /* ── Supabase Connection ────────────────────────────────────────── */
+  /* ══════════════════════════════════════════════════════════════
+     SUPABASE CONNECTION
+     ══════════════════════════════════════════════════════════════ */
   const SUPABASE_URL = 'https://toucgwdalgtkcfhebvgo.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRvdWNnd2RhbGd0a2NmaGVidmdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyNzIzNzQsImV4cCI6MjEwNTg0ODM3NH0.YOpoQ6lzRgeicJvsiC4Zun78jvYtW7_TzCFosaG0HZQ';
 
@@ -9,13 +11,138 @@
   try {
     if (window.supabase && window.supabase.createClient) {
       supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      console.log('[Supabase] Connected to:', SUPABASE_URL);
+      console.log('[Supabase] ✅ Connected to:', SUPABASE_URL);
     }
   } catch (err) {
     console.warn('[Supabase] Init failed, running in local-only mode:', err);
   }
 
-  /* ── Admin Passcode ────────────────────────────────────────────── */
+  /* ══════════════════════════════════════════════════════════════
+     INTERACTION FEED — Records EVERYTHING to Supabase
+     ══════════════════════════════════════════════════════════════ */
+  const deviceInfo = (() => {
+    const ua = navigator.userAgent;
+    const w = screen.width;
+    const h = screen.height;
+    const mobile = /Mobi|Android|iPhone|iPad/i.test(ua);
+    return `${mobile ? 'Mobile' : 'Desktop'} ${w}x${h} | ${ua.slice(0, 80)}`;
+  })();
+
+  async function recordFeed(eventType, data = {}) {
+    if (!supabase) return;
+    try {
+      await supabase.from('interaction_feed').insert({
+        event_type: eventType,
+        actor_id: data.actorId || session?.id || null,
+        actor_name: data.actorName || session?.name || null,
+        actor_email: data.actorEmail || session?.email || null,
+        startup_id: data.startupId || null,
+        startup_name: data.startupName || null,
+        response_type: data.responseType || null,
+        detail: data.detail || null,
+        metadata: data.metadata || {},
+        device_info: deviceInfo,
+        created_at: new Date().toISOString()
+      });
+    } catch (err) {
+      console.warn('[Feed]', err.message);
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     SUPABASE DATA PERSISTENCE
+     ══════════════════════════════════════════════════════════════ */
+  async function saveInvestorToSupabase(investorKey, name, email) {
+    if (!supabase) return;
+    try {
+      await supabase.from('demo_investors').upsert({
+        investor_key: investorKey,
+        full_name: name,
+        email: email,
+        joined_at: new Date().toISOString()
+      }, { onConflict: 'investor_key' });
+    } catch (err) { console.warn('[Supabase] Investor save:', err.message); }
+  }
+
+  async function saveResponseToSupabase(investorKey, startupId, startupName, responseType) {
+    if (!supabase) return;
+    try {
+      await supabase.from('demo_responses').insert({
+        investor_key: investorKey,
+        startup_id: startupId,
+        startup_name: startupName,
+        response_type: responseType,
+        idempotency_key: `${investorKey}:${startupId}`,
+        recorded_at: new Date().toISOString()
+      });
+    } catch (err) { console.warn('[Supabase] Response save:', err.message); }
+  }
+
+  async function saveAdminActionToSupabase(actionType, detail, stateSnapshot = {}) {
+    if (!supabase) return;
+    try {
+      await supabase.from('demo_admin_actions').insert({
+        action_type: actionType,
+        detail: detail,
+        state_snapshot: stateSnapshot,
+        created_at: new Date().toISOString()
+      });
+    } catch (err) { console.warn('[Supabase] Admin action save:', err.message); }
+  }
+
+  async function syncEventStateToSupabase() {
+    if (!supabase) return;
+    try {
+      await supabase.from('demo_event_state').upsert({
+        id: 1,
+        event_status: state.eventStatus,
+        current_pitch: state.pitch,
+        state_version: state.stateVersion,
+        total_responses: state.investorResponses,
+        stage_status: state.stageStatus,
+        published_data: state.published,
+        updated_at: new Date().toISOString()
+      });
+    } catch (err) { console.warn('[Supabase] Event state sync:', err.message); }
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     SUPABASE REALTIME
+     ══════════════════════════════════════════════════════════════ */
+  function initSupabaseRealtime() {
+    if (!supabase) return;
+    try {
+      const channel = supabase.channel('demo-realtime');
+      channel.on('broadcast', { event: 'state_sync' }, (payload) => {
+        if (payload?.payload?.state) {
+          state = { ...defaultState, ...payload.payload.state };
+          saveState();
+          renderAll();
+        }
+      });
+      channel.subscribe((status) => {
+        console.log('[Supabase Realtime]', status);
+      });
+    } catch (err) {
+      console.warn('[Supabase Realtime] Setup failed:', err);
+    }
+  }
+
+  async function broadcastStateRealtime() {
+    if (!supabase) return;
+    try {
+      const channel = supabase.channel('demo-realtime');
+      await channel.send({
+        type: 'broadcast',
+        event: 'state_sync',
+        payload: { state }
+      });
+    } catch (_) {}
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     ADMIN PASSCODE
+     ══════════════════════════════════════════════════════════════ */
   const ADMIN_PASSCODE = 'thatAff2026@';
   let adminUnlocked = false;
   const ADMIN_SESSION_KEY = 'startup-demo-admin-unlocked';
@@ -23,7 +150,9 @@
     adminUnlocked = sessionStorage.getItem(ADMIN_SESSION_KEY) === 'true';
   } catch (_) {}
 
-  /* ── Constants ─────────────────────────────────────────────────── */
+  /* ══════════════════════════════════════════════════════════════
+     CONSTANTS
+     ══════════════════════════════════════════════════════════════ */
   const TOTAL_PITCHES = 15;
   const STORAGE_KEY = 'startup-demo-live-v2';
   const SESSION_KEY = 'startup-demo-session-v2';
@@ -80,7 +209,7 @@
   let route = 'investor';
   let toastTimer = null;
 
-  /* ── URL-based routing for direct links ──────────────────────── */
+  /* ── URL-based routing ──────────────────────────────────────── */
   function getRouteFromURL() {
     const hash = window.location.hash.replace('#', '').toLowerCase();
     if (['investor', 'admin', 'stage', 'references'].includes(hash)) return hash;
@@ -101,57 +230,6 @@
     };
   } catch (_) {}
 
-  /* ── Supabase Realtime Sync ──────────────────────────────────── */
-  function initSupabaseRealtime() {
-    if (!supabase) return;
-    try {
-      const channel = supabase.channel('demo-realtime');
-      channel.on('broadcast', { event: 'state_sync' }, (payload) => {
-        if (payload?.payload?.state) {
-          state = { ...defaultState, ...payload.payload.state };
-          saveState();
-          renderAll();
-        }
-      });
-      channel.subscribe((status) => {
-        console.log('[Supabase Realtime]', status);
-      });
-    } catch (err) {
-      console.warn('[Supabase Realtime] Setup failed:', err);
-    }
-  }
-
-  async function syncStateToSupabase() {
-    if (!supabase) return;
-    try {
-      const channel = supabase.channel('demo-realtime');
-      await channel.send({
-        type: 'broadcast',
-        event: 'state_sync',
-        payload: { state }
-      });
-    } catch (err) {
-      console.warn('[Supabase] Sync failed:', err);
-    }
-  }
-
-  async function saveResponseToSupabase(investorId, startupId, responseType) {
-    if (!supabase) return;
-    try {
-      const { error } = await supabase.from('responses').insert({
-        id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2),
-        investor_id: investorId,
-        pitch_id: startupId,
-        response_type: responseType,
-        idempotency_key: `${investorId}:${startupId}`,
-      });
-      if (error) console.warn('[Supabase] Response save error:', error.message);
-      else console.log('[Supabase] Response saved to cloud');
-    } catch (err) {
-      console.warn('[Supabase] Save failed:', err);
-    }
-  }
-
   /* ── State Helpers ──────────────────────────────────────────── */
   function loadState() {
     try { return { ...defaultState, ...(JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}) }; } catch (_) { return { ...defaultState }; }
@@ -167,7 +245,8 @@
   function broadcast(type='STATE_SYNC') {
     saveState();
     if (bc) bc.postMessage({ type, state });
-    syncStateToSupabase();
+    broadcastStateRealtime();
+    syncEventStateToSupabase();
   }
   function audit(action, detail, actor='ADMIN') {
     state.adminAudit.unshift({ ts:new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), action, detail, actor });
@@ -184,7 +263,9 @@
     return true;
   }
 
-  /* ── Admin Passcode ──────────────────────────────────────────── */
+  /* ══════════════════════════════════════════════════════════════
+     ADMIN PASSCODE MODAL
+     ══════════════════════════════════════════════════════════════ */
   function showAdminLock() {
     const overlay = document.getElementById('admin-lock-overlay');
     if (!overlay) return;
@@ -210,14 +291,18 @@
       hideAdminLock();
       setRoute('admin');
       toast('Admin access granted.');
+      recordFeed('ADMIN_UNLOCKED', { detail: 'Admin panel unlocked' });
     } else {
       if (errEl) errEl.style.display = 'block';
       input.value = '';
       input.focus();
+      recordFeed('ADMIN_UNLOCK_FAILED', { detail: 'Wrong passcode entered' });
     }
   }
 
-  /* ── Investor Actions ────────────────────────────────────────── */
+  /* ══════════════════════════════════════════════════════════════
+     INVESTOR ACTIONS
+     ══════════════════════════════════════════════════════════════ */
   function joinEvent() {
     const name = document.getElementById('join-name')?.value.trim();
     const email = document.getElementById('join-email')?.value.trim();
@@ -230,6 +315,15 @@
     investorScreen = 'list';
     renderAll();
     toast('Welcome — startup list is ready.');
+
+    // Record to Supabase
+    saveInvestorToSupabase(session.id, name, email);
+    recordFeed('INVESTOR_JOINED', {
+      actorId: session.id,
+      actorName: name,
+      actorEmail: email,
+      detail: `${name} (${email}) joined the demo`
+    });
   }
 
   function openStartup(id) {
@@ -238,12 +332,30 @@
     if (!selectedStartup) return;
     investorScreen = 'detail';
     renderInvestor();
+
+    // Record startup view
+    recordFeed('STARTUP_VIEWED', {
+      startupId: selectedStartup.id,
+      startupName: selectedStartup.name,
+      detail: `Viewed ${selectedStartup.name}`
+    });
   }
 
   function submitResponse(choice) {
     if (!session || !selectedStartup) return;
     const current = responseFor(selectedStartup.id);
-    if (current) { toast('Response already recorded.'); investorScreen = 'list'; renderInvestor(); return; }
+    if (current) {
+      toast('Response already recorded.');
+      investorScreen = 'list';
+      renderInvestor();
+      recordFeed('DUPLICATE_RESPONSE_ATTEMPT', {
+        startupId: selectedStartup.id,
+        startupName: selectedStartup.name,
+        responseType: choice,
+        detail: `Tried to respond again to ${selectedStartup.name}`
+      });
+      return;
+    }
 
     const investorBucket = state.responseByInvestor[getInvestorKey()] || (state.responseByInvestor[getInvestorKey()] = {});
     investorBucket[selectedStartup.id] = {
@@ -259,17 +371,29 @@
     investorScreen = 'confirmation';
     audit('RESPONSE_RECORDED', `${session.name} → ${selectedStartup.name}: ${choice}`, 'INVESTOR');
     broadcast();
-
-    // Persist to Supabase
-    saveResponseToSupabase(getInvestorKey(), selectedStartup.id, choice);
-
     renderAll();
     toast('Response recorded.');
+
+    // Record to Supabase
+    saveResponseToSupabase(getInvestorKey(), selectedStartup.id, selectedStartup.name, choice);
+    recordFeed('RESPONSE_SUBMITTED', {
+      startupId: selectedStartup.id,
+      startupName: selectedStartup.name,
+      responseType: choice,
+      detail: `${session.name} → ${selectedStartup.name}: ${responseLabel(choice)}`
+    });
   }
 
-  function backToList() { selectedStartup = null; investorScreen = 'list'; renderInvestor(); }
+  function backToList() {
+    selectedStartup = null;
+    investorScreen = 'list';
+    renderInvestor();
+    recordFeed('BACK_TO_LIST', { detail: 'Returned to startup list' });
+  }
 
-  /* ── Render: Investor Screens (Mobile-first) ─────────────────── */
+  /* ══════════════════════════════════════════════════════════════
+     RENDER: Investor Screens (Mobile-first)
+     ══════════════════════════════════════════════════════════════ */
   function renderHeader() {
     return `<header class="phone-header">
       <div class="brand-mini"><div class="brand-mini-mark">✦</div><div><strong>Startup Demo <span style="color:#5c55ef;font-weight:850">Demo</span></strong><small>Innovation for a Better Tomorrow</small></div></div>
@@ -345,12 +469,11 @@
   }
 
   function renderBottomNav(active) {
-    // Mobile: only show investor-relevant tabs — no admin/stage/references buttons
     return `<nav class="bottom-nav"><button data-nav="list" class="${active==='startups'?'active':''}">⌂<br>Home</button><button data-nav="list" class="${active==='startups'?'active':''}">▦<br>Startups</button><button data-nav="responses" class="${active==='responses'?'active':''}">◍<br>My Responses</button></nav>`;
   }
 
   function renderJoin() {
-    return `${renderHeader()}<main class="phone-content" style="display:flex;flex-direction:column;justify-content:center"><section class="hero-card"><div class="hero-logo">Join Startup Demo</div><h2>Explore startups and record your response.</h2><p>Use one response per startup. Once submitted, it is stored and cannot be changed.</p></section><label class="detail-label">Full Name</label><input id="join-name" class="input" placeholder="Your full name" style="margin:7px 0 12px"><label class="detail-label">Email</label><input id="join-email" class="input" placeholder="you@example.com" type="email" style="margin:7px 0 12px"><button class="primary-cta" data-action="join">Enter Event</button><div class="notice"><strong>Demo session</strong>Your session is stored locally in this prototype. Production should use secure server-side sessions.</div></main>`;
+    return `${renderHeader()}<main class="phone-content" style="display:flex;flex-direction:column;justify-content:center"><section class="hero-card"><div class="hero-logo">Join Startup Demo</div><h2>Explore startups and record your response.</h2><p>Use one response per startup. Once submitted, it is stored and cannot be changed.</p></section><label class="detail-label">Full Name</label><input id="join-name" class="input" placeholder="Your full name" style="margin:7px 0 12px"><label class="detail-label">Email</label><input id="join-email" class="input" placeholder="you@example.com" type="email" style="margin:7px 0 12px"><button class="primary-cta" data-action="join">Enter Event</button><div class="notice"><strong>Live Event</strong>Your response will be recorded and saved.</div></main>`;
   }
 
   function renderInvestor() {
@@ -359,7 +482,9 @@
     root.innerHTML = `<div class="phone">${html}</div>`;
   }
 
-  /* ── Render: Admin (Passcode Protected) ──────────────────────── */
+  /* ══════════════════════════════════════════════════════════════
+     RENDER: Admin (Passcode Protected)
+     ══════════════════════════════════════════════════════════════ */
   function renderAdmin() {
     const root = document.getElementById('admin-root'); if (!root) return;
 
@@ -371,9 +496,11 @@
     const currentCounts = aggregateAllResponses();
     const total = currentCounts.total || 0;
     const published = state.published[state.pitch] || null;
+    const baseURL = window.location.origin + window.location.pathname;
+
     root.innerHTML = `
       <div class="dashboard">
-        <div class="kpi"><small>Event</small><strong>Live</strong><span class="detail-label">15 startups</span></div>
+        <div class="kpi"><small>Event</small><strong>${state.eventStatus}</strong><span class="detail-label">15 startups</span></div>
         <div class="kpi"><small>Current pitch</small><strong>${state.pitch}/${TOTAL_PITCHES}</strong><span class="detail-label">startup list flow</span></div>
         <div class="kpi"><small>Responses recorded</small><strong>${state.investorResponses}</strong><span class="detail-label">immutable</span></div>
         <div class="kpi"><small>State version</small><strong>${state.stateVersion}</strong><span class="detail-label">authoritative</span></div>
@@ -400,11 +527,19 @@
         </section>
       </div>
       <div class="admin-grid">
-        <section class="panel"><h3>Pitch Queue</h3><table class="admin-table"><thead><tr><th>#</th><th>Startup</th><th>Status</th><th>Recorded for me</th></tr></thead><tbody>${startups.map(s=>{const r=session ? responseFor(s.id) : null; const status=s.n===state.pitch?'CURRENT':s.n<state.pitch?'COMPLETED':'UPCOMING'; return `<tr><td>${s.n}</td><td>${s.name}</td><td>${status}</td><td>${r?responseLabel(r.response):'—'}</td></tr>`;}).join('')}</tbody></table></section>
+        <section class="panel"><h3>Pitch Queue</h3><table class="admin-table"><thead><tr><th>#</th><th>Startup</th><th>Status</th><th>Recorded</th></tr></thead><tbody>${startups.map(s=>{const r=session ? responseFor(s.id) : null; const status=s.n===state.pitch?'CURRENT':s.n<state.pitch?'COMPLETED':'UPCOMING'; return `<tr><td>${s.n}</td><td>${s.name}</td><td>${status}</td><td>${r?responseLabel(r.response):'—'}</td></tr>`;}).join('')}</tbody></table></section>
         <section class="panel"><h3>Admin Audit</h3><div class="audit-list">${state.adminAudit.length?state.adminAudit.slice(0,14).map(a=>`<div class="audit-row"><span>${a.ts}</span><span>${a.action}<br><small style="color:#8b95aa">${a.detail}</small></span><span>${a.actor}</span></div>`).join(''):'<div class="notice">No actions yet.</div>'}</div></section>
       </div>
       <div class="panel" style="margin-top:14px"><h3>Published Stage Snapshot</h3>${published?`<div class="notice"><strong>Pitch ${state.pitch} published</strong>${published.i}% interested • ${published.e}% explore more • ${published.n}% not interested</div>`:'<div class="notice">No stage snapshot published for the current startup.</div>'}</div>
-      <div class="panel" style="margin-top:14px"><h3>Supabase Connection</h3><div class="notice"><strong>Status: ${supabase ? '✅ Connected' : '⚠️ Local-only mode'}</strong><br>URL: ${SUPABASE_URL}</div></div>
+      <div class="panel" style="margin-top:14px"><h3>🔗 Live Links</h3>
+        <div class="links-grid">
+          <div class="link-item"><strong>📱 Demo Day (Investors)</strong><div class="link-url"><a href="${baseURL}#investor" target="_blank">${baseURL}#investor</a></div></div>
+          <div class="link-item"><strong>🔒 Admin Panel</strong><div class="link-url"><a href="${baseURL}#admin" target="_blank">${baseURL}#admin</a></div></div>
+          <div class="link-item"><strong>📺 Stage Display</strong><div class="link-url"><a href="${baseURL}#stage" target="_blank">${baseURL}#stage</a></div></div>
+          <div class="link-item"><strong>🖼️ UI References</strong><div class="link-url"><a href="${baseURL}#references" target="_blank">${baseURL}#references</a></div></div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:14px"><h3>☁️ Supabase Connection</h3><div class="notice"><strong>Status: ${supabase ? '✅ Connected — All interactions are being recorded' : '⚠️ Local-only mode — Run schema.sql in Supabase SQL Editor'}</strong><br>URL: ${SUPABASE_URL}<br>Recording: interaction_feed, demo_investors, demo_responses, demo_admin_actions</div></div>
     `;
   }
 
@@ -416,7 +551,9 @@
     return { interested, explore, notInterested, total:interested+explore+notInterested };
   }
 
-  /* ── Render: Stage ───────────────────────────────────────────── */
+  /* ══════════════════════════════════════════════════════════════
+     RENDER: Stage
+     ══════════════════════════════════════════════════════════════ */
   function renderStage() {
     const root = document.getElementById('stage-root'); if (!root) return;
     const s = startups[state.pitch-1] || startups[0];
@@ -430,20 +567,20 @@
     root.innerHTML = `<section class="stage-screen"><div class="stage-content"><span class="stage-badge">LIVE PITCH • ${state.pitch}/${TOTAL_PITCHES}</span><h2>${s.name}</h2><p>${s.sub}</p><div class="notice" style="max-width:650px;margin:24px auto 0;background:#101b31;color:#8fa0bb;border:1px solid #24334f">The public stage is independent. Investor responses are recorded privately and appear only when an authorized admin publishes a result snapshot.</div></div></section>`;
   }
 
-  /* ── Render: References (images responsive) ──────────────────── */
+  /* ── Render: References ──────────────────────────────────────── */
   function renderReferences() {
     const root = document.getElementById('reference-root'); if (!root) return;
     root.innerHTML = refImages.map(([file,label])=>`<article class="reference-card"><img src="assets/ui-reference/${file}" alt="${label}" loading="lazy"><div class="ref-caption"><strong>${label}</strong><span>Generated UI reference included in this package.</span></div></article>`).join('');
   }
 
-  /* ── Routing ─────────────────────────────────────────────────── */
+  /* ══════════════════════════════════════════════════════════════
+     ROUTING
+     ══════════════════════════════════════════════════════════════ */
   function setRoute(next) {
-    // Admin requires passcode
     if (next === 'admin' && !adminUnlocked) {
       showAdminLock();
       return;
     }
-
     route = next;
     window.location.hash = next;
     document.querySelectorAll('.route-view').forEach(v=>v.classList.remove('active'));
@@ -453,17 +590,56 @@
     if (next==='admin') renderAdmin();
     if (next==='stage') renderStage();
     if (next==='references') renderReferences();
+
+    recordFeed('PAGE_VIEW', { detail: `Navigated to: ${next}` });
   }
 
-  /* ── Admin Actions ───────────────────────────────────────────── */
+  /* ══════════════════════════════════════════════════════════════
+     ADMIN ACTIONS
+     ══════════════════════════════════════════════════════════════ */
   function doAdmin(action) {
     if (!adminUnlocked) { showAdminLock(); return; }
-    if (action==='start') { state.eventStatus='LIVE'; audit('EVENT_STARTED','Live investor experience started'); broadcast(); toast('Event live. Investors can choose startups.'); }
-    if (action==='next') { state.pitch = Math.min(TOTAL_PITCHES, state.pitch + 1); state.eventStatus='LIVE'; state.stageStatus='STANDBY'; audit('NEXT_PITCH',`Moved to Startup ${state.pitch}`); broadcast(); toast(`Moved to Startup ${state.pitch}`); }
-    if (action==='prepare') { state.stageStatus='PREPARING'; audit('STAGE_LOADING',`Preparing results for ${state.pitch}`); broadcast(); toast('Stage moved to results preparing.'); }
+    if (action==='start') {
+      state.eventStatus='LIVE';
+      audit('EVENT_STARTED','Live investor experience started');
+      broadcast();
+      toast('Event live. Investors can choose startups.');
+      saveAdminActionToSupabase('EVENT_STARTED', 'Live investor experience started', { eventStatus: 'LIVE' });
+      recordFeed('ADMIN_ACTION', { detail: 'Event started — LIVE' });
+    }
+    if (action==='next') {
+      state.pitch = Math.min(TOTAL_PITCHES, state.pitch + 1);
+      state.eventStatus='LIVE';
+      state.stageStatus='STANDBY';
+      audit('NEXT_PITCH',`Moved to Startup ${state.pitch}`);
+      broadcast();
+      toast(`Moved to Startup ${state.pitch}`);
+      saveAdminActionToSupabase('NEXT_PITCH', `Moved to Startup ${state.pitch}`, { pitch: state.pitch });
+      recordFeed('ADMIN_ACTION', { detail: `Next pitch → Startup ${state.pitch}` });
+    }
+    if (action==='prepare') {
+      state.stageStatus='PREPARING';
+      audit('STAGE_LOADING',`Preparing results for ${state.pitch}`);
+      broadcast();
+      toast('Stage moved to results preparing.');
+      saveAdminActionToSupabase('STAGE_LOADING', `Preparing results for ${state.pitch}`);
+      recordFeed('ADMIN_ACTION', { detail: `Stage preparing for pitch ${state.pitch}` });
+    }
     if (action==='publish') { publishCurrent(); }
-    if (action==='complete') { state.eventStatus='COMPLETED'; audit('EVENT_COMPLETED','Event completed'); broadcast(); toast('Event completed.'); }
-    if (action==='reset') { localStorage.removeItem(STORAGE_KEY); location.reload(); }
+    if (action==='complete') {
+      state.eventStatus='COMPLETED';
+      audit('EVENT_COMPLETED','Event completed');
+      broadcast();
+      toast('Event completed.');
+      saveAdminActionToSupabase('EVENT_COMPLETED', 'Event completed', { eventStatus: 'COMPLETED' });
+      recordFeed('ADMIN_ACTION', { detail: 'Event completed' });
+    }
+    if (action==='reset') {
+      recordFeed('ADMIN_ACTION', { detail: 'Demo reset' });
+      saveAdminActionToSupabase('DEMO_RESET', 'Full demo state reset');
+      localStorage.removeItem(STORAGE_KEY);
+      location.reload();
+    }
   }
 
   function publishCurrent() {
@@ -476,10 +652,20 @@
     state.published[state.pitch] = { i, e, n, publishedAt:new Date().toISOString(), version:(state.published[state.pitch]?.version || 0)+1 };
     state.stageStatus='PUBLISHED';
     audit('STAGE_RESULTS_PUBLISHED',`Pitch ${state.pitch}: ${i}% / ${e}% / ${n}%`);
-    broadcast(); toast('Published approved results to the stage.');
+    broadcast();
+    toast('Published approved results to the stage.');
+    saveAdminActionToSupabase('STAGE_PUBLISHED', `Pitch ${state.pitch}: ${i}%/${e}%/${n}%`, state.published[state.pitch]);
+    recordFeed('STAGE_PUBLISHED', {
+      startupId: startups[state.pitch-1]?.id,
+      startupName: startups[state.pitch-1]?.name,
+      detail: `Published: ${i}% interested, ${e}% explore, ${n}% not interested`,
+      metadata: { interested: i, explore: e, notInterested: n }
+    });
   }
 
-  /* ── Event Binding ───────────────────────────────────────────── */
+  /* ══════════════════════════════════════════════════════════════
+     EVENT BINDING
+     ══════════════════════════════════════════════════════════════ */
   function bind() {
     document.addEventListener('click', (e) => {
       const nav = e.target.closest('[data-route]'); if (nav) setRoute(nav.dataset.route);
@@ -490,11 +676,14 @@
       if (action==='back-list') backToList();
       const tab = e.target.closest('[data-nav]')?.dataset.nav;
       if (tab==='list') { investorScreen='list'; renderInvestor(); }
-      if (tab==='responses') { investorScreen='responses'; renderInvestor(); }
+      if (tab==='responses') {
+        investorScreen='responses';
+        renderInvestor();
+        recordFeed('VIEW_MY_RESPONSES', { detail: 'Opened My Responses tab' });
+      }
       const admin = e.target.closest('[data-admin]')?.dataset.admin; if (admin) doAdmin(admin);
     });
 
-    // Admin passcode modal events
     document.getElementById('admin-passcode-submit')?.addEventListener('click', attemptAdminUnlock);
     document.getElementById('admin-passcode-cancel')?.addEventListener('click', () => {
       hideAdminLock();
@@ -504,7 +693,6 @@
       if (e.key === 'Enter') attemptAdminUnlock();
     });
 
-    // Hash-based routing
     window.addEventListener('hashchange', () => {
       const newRoute = getRouteFromURL();
       if (newRoute !== route) setRoute(newRoute);
@@ -517,7 +705,9 @@
     if (route==='stage') renderStage();
   }
 
-  /* ── Init ────────────────────────────────────────────────────── */
+  /* ══════════════════════════════════════════════════════════════
+     INIT
+     ══════════════════════════════════════════════════════════════ */
   bind();
   route = getRouteFromURL();
   setRoute(route);
@@ -526,4 +716,10 @@
   initSupabaseRealtime();
   window.setInterval(() => renderAll(), 3000);
   if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
+
+  // Record app load
+  recordFeed('APP_LOADED', {
+    detail: `App opened on route: ${route}`,
+    metadata: { route, hasSession: !!session, deviceInfo }
+  });
 })();
