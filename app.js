@@ -81,6 +81,7 @@
   let selectedStartup = null;
   let lastSubmitted = null;
   let route = 'investor';
+  let startupFilter = 'all';
   let toastTimer = null;
 
   // Live Admin Data (Maintained live via Supabase Realtime + smart polling)
@@ -1024,6 +1025,13 @@
     const totalAnswered = startups.filter(s => responseFor(s.id)).length;
     const notAnswered = TOTAL_PITCHES - totalAnswered;
 
+    let filtered = startups;
+    if (startupFilter === 'pending') {
+      filtered = startups.filter(s => !responseFor(s.id));
+    } else if (startupFilter === 'voted') {
+      filtered = startups.filter(s => !!responseFor(s.id));
+    }
+
     return `${renderHeader()}<main class="phone-content">
       <div style="margin-top:4px">
         <h1 style="font-size:26px;margin:0 0 4px">Live Startup Pitches</h1>
@@ -1031,11 +1039,13 @@
       </div>
       ${renderProgress()}
       <div class="filters">
-        <button class="chip active">All Startups (${TOTAL_PITCHES})</button>
-        <button class="chip">Pending (${notAnswered})</button>
-        <button class="chip">My Votes (${totalAnswered})</button>
+        <button class="chip ${startupFilter === 'all' ? 'active' : ''}" data-filter="all">All Startups (${TOTAL_PITCHES})</button>
+        <button class="chip ${startupFilter === 'pending' ? 'active' : ''}" data-filter="pending">Pending (${notAnswered})</button>
+        <button class="chip ${startupFilter === 'voted' ? 'active' : ''}" data-filter="voted">My Votes (${totalAnswered})</button>
       </div>
-      <section class="startup-list">${startups.map(renderStartupCard).join('')}</section>
+      <section class="startup-list">
+        ${filtered.length > 0 ? filtered.map(renderStartupCard).join('') : '<div class="notice">No startups matching this filter.</div>'}
+      </section>
     </main>${renderBottomNav('startups')}`;
   }
 
@@ -1131,9 +1141,18 @@
 
   function renderBottomNav(active) {
     return `<nav class="bottom-nav">
-      <button data-nav="list" class="${active === 'startups' ? 'active' : ''}">⌂<br>Home</button>
-      <button data-nav="list" class="${active === 'startups' ? 'active' : ''}">▦<br>Startups</button>
-      <button data-nav="responses" class="${active === 'responses' ? 'active' : ''}">◍<br>My Responses</button>
+      <button data-nav="home" class="${active === 'home' ? 'active' : ''}">
+        <span class="nav-icon">⌂</span>
+        <span class="nav-label">Home</span>
+      </button>
+      <button data-nav="list" class="${active === 'startups' ? 'active' : ''}">
+        <span class="nav-icon">▦</span>
+        <span class="nav-label">Startups</span>
+      </button>
+      <button data-nav="responses" class="${active === 'responses' ? 'active' : ''}">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">My Responses</span>
+      </button>
     </nav>`;
   }
 
@@ -1623,6 +1642,20 @@
                 <button class="btn-copy-link" data-copy-link="link-admin">📋 Copy Link</button>
                 <button class="btn-open-link" data-action="org-admin-login">Admin Login 🔒</button>
               </div>
+
+              <div class="link-gen-row">
+                <span class="link-gen-title">🏛️ <strong>Organisation Portal (Root)</strong></span>
+                <input id="link-org" class="link-gen-url" value="${baseURL}#org" readonly>
+                <button class="btn-copy-link" data-copy-link="link-org">📋 Copy Link</button>
+                <button class="btn-open-link" data-route="org">Open Portal →</button>
+              </div>
+
+              <div class="link-gen-row">
+                <span class="link-gen-title">🎨 <strong>UI Design Reference Screens</strong></span>
+                <input id="link-refs" class="link-gen-url" value="${baseURL}#references" readonly>
+                <button class="btn-copy-link" data-copy-link="link-refs">📋 Copy Link</button>
+                <button class="btn-open-link" data-route="references">View Screens →</button>
+              </div>
             </div>
           </div>
         </section>
@@ -1906,12 +1939,28 @@
         toast(`✓ Event created for ${orgName}! Custom links ready.`);
       }
 
+      const filterBtn = e.target.closest('[data-filter]');
+      if (filterBtn) {
+        startupFilter = filterBtn.dataset.filter;
+        renderInvestor();
+      }
+
       const tab = e.target.closest('[data-nav]')?.dataset.nav;
+      if (tab === 'home') {
+        startupFilter = 'all';
+        selectedStartup = null;
+        investorScreen = 'list';
+        renderInvestor();
+        const scroller = document.querySelector('.phone-content');
+        if (scroller) scroller.scrollTo({ top: 0, behavior: 'smooth' });
+      }
       if (tab === 'list') {
+        selectedStartup = null;
         investorScreen = 'list';
         renderInvestor();
       }
       if (tab === 'responses') {
+        selectedStartup = null;
         investorScreen = 'responses';
         renderInvestor();
         recordFeed('VIEW_MY_RESPONSES', { detail: 'Opened My Responses' });
