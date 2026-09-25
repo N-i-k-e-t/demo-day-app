@@ -1257,6 +1257,10 @@
 
     const published = state.published[state.pitch] || null;
     const baseURL = window.location.origin + window.location.pathname;
+    const eventSlug = orgState.slug || slugify(orgState.eventTitle);
+    const investorURL = `${baseURL}?event=${eventSlug}#investor`;
+    const stageURL = `${baseURL}?event=${eventSlug}#stage`;
+    const adminURL = `${baseURL}?event=${eventSlug}#admin`;
 
     root.innerHTML = `
       <!-- Live Submission Overview Hero -->
@@ -1478,28 +1482,83 @@
         </div>` : '<div class="notice">No snapshot published yet for this pitch. Click "Publish to Stage" to make aggregated results visible on the Stage screen.</div>'}
       </div>
 
-      <!-- Live Shareable Links -->
-      <div class="panel" style="margin-top:14px">
-        <h3>🔗 Live Event Links</h3>
-        <div class="links-grid">
-          <div class="link-item">
-            <strong>📱 Demo Day (Investors)</strong>
-            <div class="link-url"><a href="${baseURL}#investor" target="_blank">${baseURL}#investor</a></div>
+      <!-- Generated Shareable Event Links (Admin-Only Access) -->
+      <section class="panel" style="margin-top:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div>
+            <h3 style="margin:0 0 4px">🔗 Generated Shareable Event Links</h3>
+            <p class="detail-label" style="margin:0">Distribute these direct URLs to your audience and projection team. The investor app has zero admin buttons.</p>
           </div>
-          <div class="link-item">
-            <strong>🔒 Admin Command Center</strong>
-            <div class="link-url"><a href="${baseURL}#admin" target="_blank">${baseURL}#admin</a></div>
+          <span class="live-stat-chip blue">Admin Control Only</span>
+        </div>
+
+        <div class="link-gen-container" style="margin-top:14px">
+          <div class="link-gen-row">
+            <span class="link-gen-title">📱 <strong>Investor Voting App</strong></span>
+            <input id="admin-link-investor" class="link-gen-url" value="${investorURL}" readonly>
+            <button class="btn-copy-link" data-copy-link="admin-link-investor">📋 Copy Link</button>
+            <a href="${investorURL}" target="_blank" class="btn-open-link" style="text-decoration:none">Open App ↗</a>
           </div>
-          <div class="link-item">
-            <strong>📺 Stage Display</strong>
-            <div class="link-url"><a href="${baseURL}#stage" target="_blank">${baseURL}#stage</a></div>
+
+          <div class="link-gen-row">
+            <span class="link-gen-title">📺 <strong>Main Stage Display</strong></span>
+            <input id="admin-link-stage" class="link-gen-url" value="${stageURL}" readonly>
+            <button class="btn-copy-link" data-copy-link="admin-link-stage">📋 Copy Link</button>
+            <button class="btn-open-link" data-route="stage">Open Stage →</button>
           </div>
-          <div class="link-item">
-            <strong>🖼️ UI Reference Package</strong>
-            <div class="link-url"><a href="${baseURL}#references" target="_blank">${baseURL}#references</a></div>
+
+          <div class="link-gen-row">
+            <span class="link-gen-title">🔒 <strong>Organiser Command Center</strong></span>
+            <input id="admin-link-admin" class="link-gen-url" value="${adminURL}" readonly>
+            <button class="btn-copy-link" data-copy-link="admin-link-admin">📋 Copy Link</button>
+            <button class="btn-open-link" data-route="admin">Active View ✓</button>
+          </div>
+
+          <div class="link-gen-row">
+            <span class="link-gen-title">🏛️ <strong>Public Organisation Landing Page</strong></span>
+            <input id="admin-link-org" class="link-gen-url" value="${baseURL}#org" readonly>
+            <button class="btn-copy-link" data-copy-link="admin-link-org">📋 Copy Link</button>
+            <button class="btn-open-link" data-route="org">Open Landing →</button>
+          </div>
+
+          <div class="link-gen-row">
+            <span class="link-gen-title">🎨 <strong>UI Design Reference Screens</strong></span>
+            <input id="admin-link-refs" class="link-gen-url" value="${baseURL}#references" readonly>
+            <button class="btn-copy-link" data-copy-link="admin-link-refs">📋 Copy Link</button>
+            <button class="btn-open-link" data-route="references">View Screens →</button>
           </div>
         </div>
-      </div>
+      </section>
+
+      <!-- Custom Event & Organisation Settings (Admin-Only) -->
+      <section id="org-create-section" class="panel" style="margin-top:14px">
+        <h3>⚙️ Custom Event & Organisation Settings</h3>
+        <p class="detail-label" style="margin-bottom:14px">Customize the event title and organisation details for your syndicate or cohort.</p>
+
+        <div class="org-form-grid">
+          <div class="org-input-group">
+            <label>Organisation Name</label>
+            <input id="org-input-name" class="input" placeholder="e.g. Asian Founders Fund (AFF)" value="${orgState.name}">
+          </div>
+          <div class="org-input-group">
+            <label>Lead Organiser Email</label>
+            <input id="org-input-email" class="input" type="email" placeholder="e.g. partner@asianfoundersfund.com" value="${orgState.leadEmail}">
+          </div>
+          <div class="org-input-group">
+            <label>Demo Day Event Title</label>
+            <input id="org-input-event" class="input" placeholder="e.g. AFF Demo Day 2026" value="${orgState.eventTitle}">
+          </div>
+          <div class="org-input-group">
+            <label>Admin Passcode</label>
+            <input id="org-input-passcode" class="input" placeholder="e.g. thatAff2026@" value="${orgState.passcode}">
+          </div>
+        </div>
+
+        <div style="margin-top:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          <button class="btn-org-primary" data-action="create-org-event">✨ Update Event Configuration</button>
+          <span class="detail-label">Saved locally & synchronized to Supabase Cloud</span>
+        </div>
+      </section>
     `;
   }
 
@@ -1608,122 +1667,81 @@
     const root = document.getElementById('org-root');
     if (!root) return;
 
-    const baseURL = window.location.origin + window.location.pathname;
-    const eventSlug = orgState.slug || slugify(orgState.eventTitle);
-    const investorURL = `${baseURL}?event=${eventSlug}#investor`;
-    const stageURL = `${baseURL}?event=${eventSlug}#stage`;
-    const adminURL = `${baseURL}?event=${eventSlug}#admin`;
-
     root.innerHTML = `
       <div class="org-landing-wrap">
         <!-- Hero Banner -->
         <section class="org-hero-banner">
           <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px">
             <img src="assets/logo.png" alt="AFF Logo" style="width:64px;height:64px;filter:drop-shadow(0 6px 14px rgba(0,0,0,0.12));flex-shrink:0">
-            <span class="org-badge"><i></i> ENTERPRISE DEMO DAY OPERATING SYSTEM</span>
+            <span class="org-badge"><i></i> ENTERPRISE DEMO DAY PLATFORM</span>
           </div>
-          <h1>Empower Your Demo Day with 1,000+ Real-Time Investor Interactions</h1>
+          <h1>${orgState.eventTitle || 'AFF Demo Day 2026'} is Live</h1>
           <p>
-            The production-grade pitch platform engineered for venture capital funds, accelerators, and demo days.
-            Instant passwordless voter verification, zero-data-loss offline sync, and real-time stage visualization.
+            Hosted by <strong>${orgState.name || 'Asian Founders Fund (AFF)'}</strong>. 15 venture-backed tech startups pitching live to accredited investors and syndicate partners.
           </p>
           <div class="org-actions-row">
-            <button class="btn-org-primary" data-route="investor">🚀 Launch Active Event (AFF 2026)</button>
-            <button class="btn-org-secondary" data-action="scroll-create-org">🏢 Register Organisation & Generate Link</button>
             <button class="btn-org-secondary" data-action="org-admin-login">🔒 Organiser Admin Access</button>
+            <a href="tel:+917350868084" class="btn-org-primary" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none">📞 Contact: +91 7350868084</a>
           </div>
         </section>
 
-        <!-- Active Default Event Showcase Card (AFF Demo Day 2026) -->
+        <!-- Live Event Status Card (Secure Public View - No Sensitive Internal Links) -->
         <section class="org-event-card">
           <div class="org-event-header">
             <div class="org-event-title">
-              <span class="eyebrow" style="color:#2563eb">DEFAULT ACTIVE EVENT</span>
+              <span class="eyebrow" style="color:#2563eb">ACTIVE LIVE EVENT</span>
               <h2>${orgState.eventTitle || 'AFF Demo Day 2026'}</h2>
-              <p>Hosted by <strong>${orgState.name || 'Asian Founders Fund (AFF)'}</strong> • 15 Pre-Configured Startups • Live Voting Ready</p>
+              <p>Hosted by <strong>${orgState.name || 'Asian Founders Fund (AFF)'}</strong> • 15 Pre-Configured Startups • Live Voting in Progress</p>
             </div>
             <div class="org-event-badges">
-              <span class="net-badge online"><i></i> Live Event Active</span>
+              <span class="net-badge online"><i></i> Live Pitching Active</span>
               <span class="live-stat-chip blue">15 Tech Startups</span>
               <span class="live-stat-chip green">1,000+ Capacity</span>
             </div>
           </div>
 
-          <div style="margin-top:18px">
-            <h4 style="margin:0 0 4px;font-size:14px;color:var(--ink)">Generated Shareable Event Links</h4>
-            <p class="detail-label" style="margin-bottom:14px">Share these direct links with your audience. Investors join passwordlessly with zero setup.</p>
-
-            <div class="link-gen-container">
-              <div class="link-gen-row">
-                <span class="link-gen-title">📱 <strong>Investor Voting App</strong></span>
-                <input id="link-investor" class="link-gen-url" value="${investorURL}" readonly>
-                <button class="btn-copy-link" data-copy-link="link-investor">📋 Copy Link</button>
-                <button class="btn-open-link" data-route="investor">Open App →</button>
-              </div>
-
-              <div class="link-gen-row">
-                <span class="link-gen-title">📺 <strong>Main Stage Display</strong></span>
-                <input id="link-stage" class="link-gen-url" value="${stageURL}" readonly>
-                <button class="btn-copy-link" data-copy-link="link-stage">📋 Copy Link</button>
-                <button class="btn-open-link" data-route="stage">Open Stage →</button>
-              </div>
-
-              <div class="link-gen-row">
-                <span class="link-gen-title">🔒 <strong>Organiser Command Center</strong></span>
-                <input id="link-admin" class="link-gen-url" value="${adminURL}" readonly>
-                <button class="btn-copy-link" data-copy-link="link-admin">📋 Copy Link</button>
-                <button class="btn-open-link" data-action="org-admin-login">Admin Login 🔒</button>
-              </div>
-
-              <div class="link-gen-row">
-                <span class="link-gen-title">🏛️ <strong>Organisation Portal (Root)</strong></span>
-                <input id="link-org" class="link-gen-url" value="${baseURL}#org" readonly>
-                <button class="btn-copy-link" data-copy-link="link-org">📋 Copy Link</button>
-                <button class="btn-open-link" data-route="org">Open Portal →</button>
-              </div>
-
-              <div class="link-gen-row">
-                <span class="link-gen-title">🎨 <strong>UI Design Reference Screens</strong></span>
-                <input id="link-refs" class="link-gen-url" value="${baseURL}#references" readonly>
-                <button class="btn-copy-link" data-copy-link="link-refs">📋 Copy Link</button>
-                <button class="btn-open-link" data-route="references">View Screens →</button>
+          <div style="margin-top:20px;padding:20px;background:rgba(37,99,235,0.06);border:1px solid rgba(37,99,235,0.2);border-radius:12px">
+            <div style="display:flex;align-items:flex-start;gap:14px">
+              <span style="font-size:28px;line-height:1">🔒</span>
+              <div>
+                <h4 style="margin:0 0 6px;font-size:15px;color:var(--ink);font-weight:700">Private & Confidential Investor Access</h4>
+                <p style="margin:0;font-size:13.5px;color:var(--ink-secondary);line-height:1.6">
+                  Attendee voting and live pitch participation are strictly private and invite-only. Accredited investors and partners receive dedicated, passwordless access links directly from event organisers.
+                </p>
               </div>
             </div>
           </div>
         </section>
 
-        <!-- Organisation Registration & Event Creator -->
-        <section id="org-create-section" class="org-event-card">
+        <!-- Contact Us To Host Your Demo Day Section -->
+        <section class="org-event-card" style="border:1px solid rgba(16,185,129,0.3);background:linear-gradient(135deg, rgba(16,185,129,0.04) 0%, rgba(37,99,235,0.04) 100%)">
           <div class="org-event-header">
             <div class="org-event-title">
-              <span class="eyebrow" style="color:#7c3aed">ORGANISATION ONBOARDING</span>
-              <h2>Register Your Organisation & Generate Custom Event Link</h2>
-              <p>Create branded event links for your venture firm, accelerator cohort, or syndicate demo day.</p>
+              <span class="eyebrow" style="color:#059669">HOST YOUR EVENT</span>
+              <h2>Want to Host Your Demo Day With Us?</h2>
+              <p>Power your venture fund, accelerator cohort, or startup pitch competition with zero-latency voting and live stage display.</p>
             </div>
           </div>
 
-          <div class="org-form-grid">
-            <div class="org-input-group">
-              <label>Organisation Name</label>
-              <input id="org-input-name" class="input" placeholder="e.g. Asian Founders Fund (AFF)" value="${orgState.name}">
+          <div style="margin-top:16px;padding:20px;background:var(--card-bg, #ffffff);border:1px solid rgba(0,0,0,0.08);border-radius:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:18px">
+            <div>
+              <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-tertiary);font-weight:700;margin-bottom:4px">Direct Organiser Hotline</div>
+              <div style="font-size:24px;font-weight:800;letter-spacing:-0.02em;color:#0f172a">
+                <a href="tel:+917350868084" style="color:inherit;text-decoration:none">+91 7350868084</a>
+              </div>
+              <div style="font-size:13px;color:var(--ink-secondary);margin-top:4px">
+                Direct phone & WhatsApp support for Demo Day partnerships & custom deployments
+              </div>
             </div>
-            <div class="org-input-group">
-              <label>Lead Organiser Email</label>
-              <input id="org-input-email" class="input" type="email" placeholder="e.g. partner@asianfoundersfund.com" value="${orgState.leadEmail}">
-            </div>
-            <div class="org-input-group">
-              <label>Demo Day Event Title</label>
-              <input id="org-input-event" class="input" placeholder="e.g. AFF Demo Day 2026" value="${orgState.eventTitle}">
-            </div>
-            <div class="org-input-group">
-              <label>Admin Passcode</label>
-              <input id="org-input-passcode" class="input" placeholder="e.g. thatAff2026@" value="${orgState.passcode}">
-            </div>
-          </div>
 
-          <div style="margin-top:20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-            <button class="btn-org-primary" data-action="create-org-event">✨ Generate Custom Event Links</button>
-            <span class="detail-label">Instant link generation • Cloud database synchronized • Production secure</span>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <a href="tel:+917350868084" class="btn-org-primary" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;padding:12px 20px;font-weight:600">
+                <span>📞</span> Call +91 7350868084
+              </a>
+              <a href="https://wa.me/917350868084?text=Hi%2C%20we%20want%20to%20host%20our%20Demo%20Day%20on%20your%20platform" target="_blank" rel="noopener noreferrer" class="btn-org-secondary" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;padding:12px 20px;font-weight:600;background:#25d366;color:#ffffff;border-color:#25d366">
+                <span>💬</span> WhatsApp Us
+              </a>
+            </div>
           </div>
         </section>
 
@@ -1736,8 +1754,8 @@
           </div>
           <div class="org-feature-card">
             <div class="org-feature-icon">🔑</div>
-            <h3>Passwordless Voting</h3>
-            <p>Investors enter name & email for immediate cryptographic access with cloud session restore.</p>
+            <h3>Passwordless Access</h3>
+            <p>Investors join securely with instant cryptographic key verification and cloud session restoration.</p>
           </div>
           <div class="org-feature-card">
             <div class="org-feature-icon">📶</div>
@@ -1746,8 +1764,8 @@
           </div>
           <div class="org-feature-card">
             <div class="org-feature-icon">🛡️</div>
-            <h3>Stage Isolation</h3>
-            <p>Individual investor votes remain strictly confidential. Only approved aggregated stats are published.</p>
+            <h3>Confidential Stage Sync</h3>
+            <p>Individual investor votes remain strictly confidential. Only approved aggregated stats are published on stage.</p>
           </div>
         </div>
       </div>
@@ -2063,6 +2081,7 @@
         });
 
         renderOrgPortal();
+        renderAdmin();
         toast(`✓ Event created for ${orgName}! Custom links ready.`);
       }
 
