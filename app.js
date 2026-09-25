@@ -1426,6 +1426,7 @@
                 <th>Investor</th>
                 <th>Email</th>
                 <th>Submissions Done</th>
+                <th>User Scores (👍 / ? / 👎)</th>
                 <th>Joined</th>
                 <th>Status</th>
               </tr>
@@ -1433,10 +1434,17 @@
             <tbody>
               ${(adminLiveStats.investors.length > 0 ? adminLiveStats.investors : (session ? [{ investor_key: session.id, full_name: session.name, email: session.email, joined_at: session.joinedAt }] : [])).map(inv => {
                 const invResps = adminLiveStats.responses.filter(r => r.investor_key === inv.investor_key);
-                const count = invResps.length || Object.keys(state.responseByInvestor[inv.investor_key] || {}).length;
+                const localResps = state.responseByInvestor[inv.investor_key] ? Object.values(state.responseByInvestor[inv.investor_key]) : [];
+                const respsToCount = invResps.length > 0 ? invResps : localResps;
+
+                const count = respsToCount.length;
                 const pct = Math.round((count / TOTAL_PITCHES) * 100);
                 const badgeClass = count === TOTAL_PITCHES ? 'complete' : count > 0 ? 'progress' : 'pending';
                 const badgeLabel = count === TOTAL_PITCHES ? 'All 15 Completed' : count > 0 ? 'In Progress' : 'No Votes Yet';
+
+                const userInterested = respsToCount.filter(r => (r.response_type || r.response) === RESPONSE.INTERESTED).length;
+                const userExplore = respsToCount.filter(r => (r.response_type || r.response) === RESPONSE.EXPLORE).length;
+                const userNotInterested = respsToCount.filter(r => (r.response_type || r.response) === RESPONSE.NOT_INTERESTED).length;
 
                 return `<tr>
                   <td><strong>${inv.full_name}</strong></td>
@@ -1446,6 +1454,11 @@
                       <div class="mini-prog-bar"><div class="mini-prog-fill" style="width:${pct}%"></div></div>
                       <span><strong>${count}</strong> / ${TOTAL_PITCHES}</span>
                     </div>
+                  </td>
+                  <td>
+                    <span style="color:#10b981;font-weight:800">👍 ${userInterested}</span> &nbsp;
+                    <span style="color:#f59e0b;font-weight:800">? ${userExplore}</span> &nbsp;
+                    <span style="color:#3b82f6;font-weight:800">👎 ${userNotInterested}</span>
                   </td>
                   <td style="color:#64748b;font-size:10px">${new Date(inv.joined_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
                   <td><span class="roster-badge ${badgeClass}">${badgeLabel}</span></td>
