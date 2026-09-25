@@ -1420,19 +1420,19 @@
       <section class="admin-hero-live">
         <div class="admin-hero-top">
           <div class="admin-hero-meta">
-            <span class="eyebrow" style="color:#7dd3fc">PITCH ${state.pitch} OF ${TOTAL_PITCHES} • LIVE PARTICIPATION</span>
-            <h2>${currentStartup.name} <small style="font-size:14px;font-weight:400;color:#94a3b8">(${currentStartup.sub})</small></h2>
-            <p>Live submission tracker: Real-time counter of investors who have filled their response.</p>
+            <span class="eyebrow" style="color:#38bdf8;background:rgba(56,189,248,0.12);padding:4px 12px;border-radius:999px;border:1px solid rgba(56,189,248,0.25);display:inline-block;margin-bottom:6px">PITCH ${state.pitch} OF ${TOTAL_PITCHES} • LIVE PARTICIPATION</span>
+            <h2>${currentStartup.name} <small style="font-size:15px;font-weight:400;color:#94a3b8">(${currentStartup.sub})</small></h2>
+            <p>Real-time submission engine: Instant live tracking of investor votes and syndicate sentiment.</p>
           </div>
-          <div>
-            <span class="net-badge online"><i></i> Realtime Submissions Stream</span>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span class="net-badge online"><span class="live-pulse-dot" style="width:7px;height:7px"></span> Realtime Submissions Stream</span>
           </div>
         </div>
 
         <div class="live-completion-stats">
-          <div class="live-completion-num">${currentSubmittedCount > 0 ? currentSubmittedCount : '0'} <span style="font-size:20px;font-weight:600;color:#94a3b8">/ ${totalInvestors > 0 ? totalInvestors : '0'}</span></div>
+          <div class="live-completion-num">${currentSubmittedCount > 0 ? currentSubmittedCount : '0'} <span style="font-size:22px;font-weight:600;color:#94a3b8">/ ${totalInvestors > 0 ? totalInvestors : '0'}</span></div>
           <div class="live-completion-desc">
-            <strong>${currentSubmittedCount > 0 ? `${currentCompletionPct}% of registered investors have submitted` : 'No submissions recorded yet for this pitch'}</strong>
+            <strong>${currentSubmittedCount > 0 ? `${currentCompletionPct}% of registered investors submitted` : 'No submissions recorded yet for this pitch'}</strong>
             <span>${totalInvestors > 0 ? (currentPending > 0 ? `${currentPending} investors still pending for this pitch` : 'All registered investors have submitted!') : 'Awaiting live investor participation'}</span>
           </div>
         </div>
@@ -1443,46 +1443,46 @@
 
         <div class="live-chips-row">
           ${currentSubmittedCount > 0 ? `
-            <span class="live-stat-chip green">👍 ${currentInterested} Interested</span>
-            <span class="live-stat-chip yellow">? ${currentExplore} Explore More</span>
-            <span class="live-stat-chip blue">👎 ${currentNotInterested} Not Interested</span>
-            <span class="live-stat-chip gray">⏳ ${currentPending} Pending</span>
+            <span class="live-stat-chip green">👍 <strong>${currentInterested}</strong> Interested</span>
+            <span class="live-stat-chip yellow">? <strong>${currentExplore}</strong> Explore More</span>
+            <span class="live-stat-chip blue">👎 <strong>${currentNotInterested}</strong> Not Interested</span>
+            <span class="live-stat-chip gray">⏳ <strong>${currentPending}</strong> Pending</span>
           ` : `
-            <span class="live-stat-chip gray" style="font-weight:600;padding:4px 10px">— No live responses submitted yet for pitch ${state.pitch} —</span>
+            <span class="live-stat-chip gray" style="font-weight:600;padding:6px 14px">— Awaiting live responses for pitch ${state.pitch} (${currentStartup.name}) —</span>
           `}
         </div>
       </section>
 
       <!-- KPI Grid -->
-      <div class="dashboard" style="grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px;">
-        <div class="kpi">
-          <small>Registered Investors</small>
+      <div class="dashboard">
+        <div class="kpi kpi-investors">
+          <small>👥 Registered Investors</small>
           <strong>${totalInvestors}</strong>
           <span class="detail-label">Passwordless accounts</span>
         </div>
-        <div class="kpi" style="border-color: ${onlineNowCount > 0 ? '#86efac' : 'var(--line)'}; background: ${onlineNowCount > 0 ? '#f0fdf4' : '#fff'}">
-          <small style="color: #15803d"><span class="live-pulse-dot"></span> Logged In Now</small>
-          <strong style="color: #166534">${onlineNowCount}</strong>
+        <div class="kpi kpi-online" style="${onlineNowCount > 0 ? 'background:#f0fdf4;border-color:#86efac' : ''}">
+          <small style="${onlineNowCount > 0 ? 'color:#15803d' : ''}"><span class="live-pulse-dot"></span> Logged In Now</small>
+          <strong style="${onlineNowCount > 0 ? 'color:#166534' : ''}">${onlineNowCount}</strong>
           <span class="detail-label">${onlineNowCount > 0 ? 'Active in last 60s' : 'Awaiting sign-ins'}</span>
         </div>
-        <div class="kpi">
-          <small>Responded Investors</small>
-          <strong>${totalVotedInvestorsCount} <span style="font-size:16px;font-weight:600;color:#94a3b8">/ ${totalInvestors}</span></strong>
+        <div class="kpi kpi-voters">
+          <small>✅ Responded Investors</small>
+          <strong>${totalVotedInvestorsCount} <span style="font-size:18px;font-weight:600;color:#94a3b8">/ ${totalInvestors}</span></strong>
           <span class="detail-label">${totalInvestors > 0 ? Math.round((totalVotedInvestorsCount / totalInvestors) * 100) : 0}% active participation</span>
         </div>
-        <div class="kpi">
-          <small>Pitch ${state.pitch} Votes</small>
-          <strong>${currentSubmittedCount} <span style="font-size:16px;font-weight:600;color:#94a3b8">/ ${totalInvestors}</span></strong>
+        <div class="kpi kpi-pitch">
+          <small>📊 Pitch ${state.pitch} Votes</small>
+          <strong>${currentSubmittedCount} <span style="font-size:18px;font-weight:600;color:#94a3b8">/ ${totalInvestors}</span></strong>
           <span class="detail-label">${currentPending} pending for ${currentStartup.name}</span>
         </div>
-        <div class="kpi">
-          <small>Total Submissions</small>
+        <div class="kpi kpi-total">
+          <small>📈 Total Submissions</small>
           <strong>${totalResponsesCount}</strong>
           <span class="detail-label">Across all 15 startups</span>
         </div>
-        <div class="kpi">
-          <small>Live Network State</small>
-          <strong style="font-size:19px;margin-top:6px">${netState === 'ONLINE' ? '🟢 Cloud Sync' : '🔴 Local Only'}</strong>
+        <div class="kpi kpi-network">
+          <small>🌐 Cloud Engine</small>
+          <strong style="font-size:22px;margin-top:6px">${netState === 'ONLINE' ? '🟢 Cloud Sync' : '🔴 Local Only'}</strong>
           <span class="detail-label">${outboxQueue.length} pending outbox items</span>
         </div>
       </div>
@@ -1490,34 +1490,45 @@
       <!-- Controls & Responses -->
       <div class="admin-grid">
         <section class="panel">
-          <h3>Event & Stage Controls</h3>
+          <h3>
+            <span>🎛️ Event & Stage Controls</span>
+            <span class="live-stat-chip blue" style="font-size:10px;padding:3px 10px;font-weight:800">Pitch ${state.pitch} Active</span>
+          </h3>
+          <p class="detail-label" style="margin-bottom:16px">Control stage progression and publish live aggregated sentiment to audience screens.</p>
+          
           <div class="admin-btns">
-            <button class="admin-btn blue" data-admin="start">Start Event</button>
-            <button class="admin-btn yellow" data-admin="next">Next Startup (${Math.min(TOTAL_PITCHES, state.pitch + 1)})</button>
-            <button class="admin-btn green" data-admin="prepare">Prepare Stage</button>
-            <button class="admin-btn dark" data-admin="publish">Publish to Stage</button>
-            <button class="admin-btn red" data-admin="complete">Complete Event</button>
-            <button class="admin-btn" style="background:#eef1f6" data-admin="reset">Reset Demo</button>
+            <button class="admin-btn blue" data-admin="start">▶ Start Event</button>
+            <button class="admin-btn yellow" data-admin="next">⏭ Next Startup (${Math.min(TOTAL_PITCHES, state.pitch + 1)})</button>
+            <button class="admin-btn green" data-admin="prepare">🎯 Prepare Stage</button>
+            <button class="admin-btn dark" data-admin="publish">📡 Publish to Stage</button>
+            <button class="admin-btn red" data-admin="complete">🏁 Complete Event</button>
+            <button class="admin-btn neutral" data-admin="reset">↺ Reset Demo</button>
           </div>
-          <div style="margin-top:16px;padding-top:14px;border-top:1px solid #edf2f7">
-            <h4 style="margin:0 0 10px;font-size:13px;color:var(--ink)">Real-Time Data Backups & Session Reset</h4>
+
+          <div style="margin-top:20px;padding:16px 20px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px">
+            <h4 style="margin:0 0 10px;font-size:13px;font-weight:850;color:var(--ink)">Real-Time Data Backups & Reset</h4>
             <div class="admin-btns">
               <button class="admin-btn green" data-action="export-csv">📥 Export All Votes (CSV)</button>
               <button class="admin-btn blue" data-action="export-json">💾 Download Event Backup (JSON)</button>
-              <button class="admin-btn" style="background:#eef1f6" data-admin="refresh-data">🔄 Force Cloud Sync</button>
-              <button class="admin-btn red" data-action="reset-session" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-weight:850">
-                🔄 Reset & Start New Session (Auto-CSV Download)
+              <button class="admin-btn neutral" data-admin="refresh-data">🔄 Force Cloud Sync</button>
+              <button class="admin-btn red" data-action="reset-session" style="font-weight:850">
+                🔄 Reset & Start New Session (Auto-CSV)
               </button>
             </div>
           </div>
-          <div class="notice" style="margin-top:14px">
-            <strong>Stage Privacy Rule</strong>
+
+          <div class="notice" style="margin-top:16px;background:#f0f9ff;border-color:#bae6fd;color:#0369a1">
+            <strong>🛡️ Stage Privacy Rule</strong>
             Individual investor responses are stored securely in Supabase and aggregated before publishing. Individual votes are never streamed to public screens.
           </div>
         </section>
 
         <section class="panel">
-          <h3>Live Incoming Activity Stream</h3>
+          <h3>
+            <span>📡 Live Incoming Stream</span>
+            <span class="live-stat-chip green" style="font-size:10px;padding:3px 10px"><span class="live-pulse-dot" style="width:6px;height:6px"></span> Live</span>
+          </h3>
+          <p class="detail-label" style="margin-bottom:14px">Real-time broadcast feed of investor logins, votes, and administrative triggers.</p>
           <div class="live-stream-box">
             ${realtimeStream.length > 0 ? realtimeStream.slice(0, 15).map(item => `
               <div class="stream-item">
@@ -1533,17 +1544,22 @@
       </div>
 
       <!-- Live Pitch-by-Pitch Matrix -->
-      <div class="panel" style="margin-top:14px">
-        <h3>Startup Completion Matrix (All 15 Startups)</h3>
-        <p class="detail-label" style="margin-bottom:12px">Real-time breakdown of how many investors have filled their response for each startup.</p>
+      <div class="panel" style="margin-top:22px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+          <div>
+            <h3 style="margin:0 0 4px">Startup Completion Matrix (All 15 Startups)</h3>
+            <p class="detail-label" style="margin:0">Real-time breakdown of how many investors have filled their response for each startup.</p>
+          </div>
+          <span class="live-stat-chip blue" style="font-weight:800;font-size:11px">15 Pitches Total</span>
+        </div>
         <div class="roster-wrap">
           <table class="roster-table">
             <thead>
               <tr>
-                <th style="width:40px">#</th>
+                <th style="width:50px">#</th>
                 <th>Startup</th>
-                <th style="width:130px">Submissions</th>
-                <th style="width:180px">Participation</th>
+                <th style="width:140px">Submissions</th>
+                <th style="width:190px">Participation</th>
                 <th>Breakdown (👍 / ? / 👎)</th>
                 <th>Status</th>
               </tr>
@@ -1559,29 +1575,33 @@
                 const iCount = sResps.filter(r => (r.response_type || r.response) === RESPONSE.INTERESTED).length;
                 const eCount = sResps.filter(r => (r.response_type || r.response) === RESPONSE.EXPLORE).length;
                 const nCount = sResps.filter(r => (r.response_type || r.response) === RESPONSE.NOT_INTERESTED).length;
-                const status = s.n === state.pitch ? 'CURRENT' : s.n < state.pitch ? 'COMPLETED' : 'UPCOMING';
-                const statusColor = s.n === state.pitch ? 'blue' : s.n < state.pitch ? 'green' : 'gray';
+                const isCurrent = s.n === state.pitch;
+                const status = isCurrent ? 'CURRENT PITCH' : s.n < state.pitch ? 'COMPLETED' : 'UPCOMING';
+                const statusColor = isCurrent ? 'blue' : s.n < state.pitch ? 'green' : 'gray';
 
-                return `<tr>
-                  <td><strong>${s.n}</strong></td>
-                  <td><strong>${s.name}</strong><br><small style="color:#64748b">${s.sub}</small></td>
-                  <td>${hasVotes ? `<strong>${count}</strong> / ${totalInvestors}` : '<span style="color:#94a3b8;font-size:11px">—</span>'}</td>
+                return `<tr class="${isCurrent ? 'active-pitch-row' : ''}">
+                  <td><strong style="color:${isCurrent ? '#2563eb' : 'inherit'}">${s.n}</strong></td>
+                  <td>
+                    <strong style="font-size:14px">${s.name}</strong>
+                    <br><small style="color:#64748b;font-size:11px">${s.sub}</small>
+                  </td>
+                  <td>${hasVotes ? `<strong style="font-size:14px;color:#0f172a">${count}</strong> <span style="color:#94a3b8">/ ${totalInvestors}</span>` : '<span style="color:#94a3b8;font-size:12px">—</span>'}</td>
                   <td>
                     ${hasVotes ? `
                       <div class="mini-prog">
                         <div class="mini-prog-bar"><div class="mini-prog-fill" style="width:${pct}%"></div></div>
-                        <span>${pct}%</span>
+                        <span style="font-weight:750;font-size:12px">${pct}%</span>
                       </div>
-                    ` : '<span style="color:#94a3b8;font-size:11px">—</span>'}
+                    ` : '<span style="color:#94a3b8;font-size:12px">—</span>'}
                   </td>
                   <td>
                     ${hasVotes ? `
-                      <span style="color:#10b981;font-weight:750">👍 ${iCount}</span> &nbsp;
-                      <span style="color:#f59e0b;font-weight:750">? ${eCount}</span> &nbsp;
-                      <span style="color:#3b82f6;font-weight:750">👎 ${nCount}</span>
-                    ` : '<span style="color:#94a3b8;font-size:11px">—</span>'}
+                      <span class="live-stat-chip green" style="padding:2px 8px;font-size:10.5px;font-weight:800">👍 ${iCount}</span> &nbsp;
+                      <span class="live-stat-chip yellow" style="padding:2px 8px;font-size:10.5px;font-weight:800">? ${eCount}</span> &nbsp;
+                      <span class="live-stat-chip blue" style="padding:2px 8px;font-size:10.5px;font-weight:800">👎 ${nCount}</span>
+                    ` : '<span style="color:#94a3b8;font-size:12px">—</span>'}
                   </td>
-                  <td><span class="live-stat-chip ${statusColor}" style="padding:2px 8px;font-size:10px">${status}</span></td>
+                  <td><span class="live-stat-chip ${statusColor}" style="padding:3px 10px;font-size:10.5px;font-weight:800">${status}</span></td>
                 </tr>`;
               }).join('')}
             </tbody>
@@ -1590,31 +1610,30 @@
       </div>
 
       <!-- Live Registered Investors Roster -->
-      <div class="panel" style="margin-top:14px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px">
+      <div class="panel" style="margin-top:22px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
           <div>
             <h3 style="margin:0 0 4px">Live Registered Investors Roster (${totalInvestors})</h3>
             <p class="detail-label" style="margin:0">Live presence and pitch-by-pitch user response tracker.</p>
           </div>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <div class="roster-tabs">
               <button class="roster-tab-btn ${adminRosterFilter === 'all' ? 'active' : ''}" data-roster-filter="all">All (${totalInvestors})</button>
               <button class="roster-tab-btn ${adminRosterFilter === 'online' ? 'active' : ''}" data-roster-filter="online">🟢 Online Now (${onlineNowCount})</button>
               <button class="roster-tab-btn ${adminRosterFilter === 'voted' ? 'active' : ''}" data-roster-filter="voted">✅ Voted Pitch ${state.pitch} (${currentSubmittedCount})</button>
               <button class="roster-tab-btn ${adminRosterFilter === 'pending' ? 'active' : ''}" data-roster-filter="pending">⏳ Pending Pitch ${state.pitch} (${currentPending})</button>
             </div>
-            <button class="admin-btn blue" data-admin="refresh-data" style="font-size:11px;padding:6px 12px">↻ Refresh Cloud Data</button>
+            <button class="admin-btn neutral" data-admin="refresh-data" style="font-size:11.5px;padding:7px 14px">↻ Refresh Cloud Data</button>
           </div>
         </div>
         <div class="roster-wrap">
           <table class="roster-table">
             <thead>
               <tr>
-                <th>Investor</th>
-                <th>Email</th>
+                <th>Investor Name & Details</th>
                 <th>Pitch ${state.pitch} Vote (${currentStartup.name})</th>
                 <th>Submissions Done</th>
-                <th>User Scores (👍 / ? / 👎)</th>
+                <th>User Sentiment (👍 / ? / 👎)</th>
                 <th>Joined</th>
                 <th>Status</th>
               </tr>
@@ -1631,7 +1650,7 @@
                 }
 
                 if (list.length === 0) {
-                  return `<tr><td colspan="7" style="text-align:center;padding:24px;color:#64748b">No investors found matching filter "${adminRosterFilter}". All live submissions and scores will appear here in real time.</td></tr>`;
+                  return `<tr><td colspan="6" style="text-align:center;padding:32px;color:#64748b">No investors found matching filter "${adminRosterFilter}". All live submissions and scores will appear here in real time.</td></tr>`;
                 }
 
                 return list.map(inv => {
@@ -1653,42 +1672,54 @@
                   const currentPitchVoteObj = respsToCount.find(r => (r.startup_id || r.startupId) === currentStartup.id);
                   const currentPitchVote = currentPitchVoteObj ? (currentPitchVoteObj.response_type || currentPitchVoteObj.response) : null;
                   const currentVoteChip = currentPitchVote === RESPONSE.INTERESTED
-                    ? '<span class="live-stat-chip green" style="padding:2px 8px;font-size:10px;font-weight:800">👍 Interested</span>'
+                    ? '<span class="live-stat-chip green" style="padding:3px 10px;font-size:11px;font-weight:800">👍 Interested</span>'
                     : currentPitchVote === RESPONSE.EXPLORE
-                    ? '<span class="live-stat-chip yellow" style="padding:2px 8px;font-size:10px;font-weight:800">? Explore</span>'
+                    ? '<span class="live-stat-chip yellow" style="padding:3px 10px;font-size:11px;font-weight:800">? Explore</span>'
                     : currentPitchVote === RESPONSE.NOT_INTERESTED
-                    ? '<span class="live-stat-chip blue" style="padding:2px 8px;font-size:10px;font-weight:800">👎 Not Interested</span>'
-                    : '<span class="live-stat-chip gray" style="padding:2px 8px;font-size:10px">⏳ Pending</span>';
+                    ? '<span class="live-stat-chip blue" style="padding:3px 10px;font-size:11px;font-weight:800">👎 Not Interested</span>'
+                    : '<span class="live-stat-chip gray" style="padding:3px 10px;font-size:11px">⏳ Pending</span>';
 
                   const lastActiveMs = inv.last_active ? (Date.now() - new Date(inv.last_active).getTime()) : 0;
                   const isSelf = session?.id === inv.investor_key;
                   const isOnlineNow = isSelf ? (navigator.onLine && netState === 'ONLINE') : (lastActiveMs > 0 && lastActiveMs < 60000);
                   const connBadge = isOnlineNow
-                    ? '<span class="live-stat-chip green" style="padding:1px 6px;font-size:9px"><span class="live-pulse-dot" style="width:6px;height:6px"></span> Online Now</span>'
+                    ? '<span class="live-stat-chip green" style="padding:2px 8px;font-size:9.5px"><span class="live-pulse-dot" style="width:6px;height:6px"></span> Online Now</span>'
                     : (lastActiveMs > 0 && lastActiveMs < 180000)
-                    ? '<span class="live-stat-chip yellow" style="padding:1px 6px;font-size:9px">🟡 Idle (&lt;3m)</span>'
-                    : '<span class="live-stat-chip gray" style="padding:1px 6px;font-size:9px">⚪ Offline</span>';
+                    ? '<span class="live-stat-chip yellow" style="padding:2px 8px;font-size:9.5px">🟡 Idle (&lt;3m)</span>'
+                    : '<span class="live-stat-chip gray" style="padding:2px 8px;font-size:9.5px">⚪ Offline</span>';
+
+                  const initials = (inv.full_name || 'Inv').split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase();
 
                   return `<tr>
-                    <td><strong>${inv.full_name}</strong> &nbsp; ${connBadge}</td>
-                    <td style="color:#64748b">${inv.email}</td>
+                    <td>
+                      <div class="investor-name-cell">
+                        <div class="investor-avatar">${initials}</div>
+                        <div>
+                          <div style="font-weight:800;color:#0f172a;display:flex;align-items:center;gap:8px">
+                            <span>${inv.full_name}</span>
+                            ${connBadge}
+                          </div>
+                          <div style="color:#64748b;font-size:11px;margin-top:2px">${inv.email}</div>
+                        </div>
+                      </div>
+                    </td>
                     <td>${currentVoteChip}</td>
                     <td>
                       ${hasUserVotes ? `
                         <div class="mini-prog">
                           <div class="mini-prog-bar"><div class="mini-prog-fill" style="width:${pct}%"></div></div>
-                          <span><strong>${count}</strong> / ${TOTAL_PITCHES}</span>
+                          <span style="font-weight:800"><strong>${count}</strong> / ${TOTAL_PITCHES}</span>
                         </div>
-                      ` : '<span style="color:#94a3b8;font-size:11px">—</span>'}
+                      ` : '<span style="color:#94a3b8;font-size:12px">—</span>'}
                     </td>
                     <td>
                       ${hasUserVotes ? `
-                        <span style="color:#10b981;font-weight:800">👍 ${userInterested}</span> &nbsp;
-                        <span style="color:#f59e0b;font-weight:800">? ${userExplore}</span> &nbsp;
-                        <span style="color:#3b82f6;font-weight:800">👎 ${userNotInterested}</span>
-                      ` : '<span style="color:#94a3b8;font-size:11px">—</span>'}
+                        <span class="live-stat-chip green" style="padding:2px 7px;font-size:10px;font-weight:800">👍 ${userInterested}</span> &nbsp;
+                        <span class="live-stat-chip yellow" style="padding:2px 7px;font-size:10px;font-weight:800">? ${userExplore}</span> &nbsp;
+                        <span class="live-stat-chip blue" style="padding:2px 7px;font-size:10px;font-weight:800">👎 ${userNotInterested}</span>
+                      ` : '<span style="color:#94a3b8;font-size:12px">—</span>'}
                     </td>
-                    <td style="color:#64748b;font-size:10px">${new Date(inv.joined_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                    <td style="color:#64748b;font-size:11px">${new Date(inv.joined_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
                     <td><span class="roster-badge ${badgeClass}">${badgeLabel}</span></td>
                   </tr>`;
                 }).join('');
@@ -1699,25 +1730,32 @@
       </div>
 
       <!-- Published Stage Snapshot -->
-      <div class="panel" style="margin-top:14px">
-        <h3>Published Stage Snapshot</h3>
-        ${published ? `<div class="notice">
-          <strong>Pitch ${state.pitch} (${currentStartup.name}) Published:</strong>
-          ${published.i}% Interested • ${published.e}% Explore More • ${published.n}% Not Interested
+      <div class="panel" style="margin-top:22px">
+        <h3>
+          <span>Published Stage Snapshot</span>
+          ${published ? '<span class="live-stat-chip green" style="font-size:10px;padding:3px 10px">Live on Screen</span>' : ''}
+        </h3>
+        ${published ? `<div class="notice" style="background:#f0fdf4;border-color:#bbf7d0;color:#166534">
+          <strong style="font-size:14px">Pitch ${state.pitch} (${currentStartup.name}) Published:</strong><br>
+          <div style="margin-top:8px;display:flex;gap:10px;flex-wrap:wrap">
+            <span class="live-stat-chip green" style="font-weight:800;padding:4px 10px">👍 ${published.i}% Interested</span>
+            <span class="live-stat-chip yellow" style="font-weight:800;padding:4px 10px">? ${published.e}% Explore More</span>
+            <span class="live-stat-chip blue" style="font-weight:800;padding:4px 10px">👎 ${published.n}% Not Interested</span>
+          </div>
         </div>` : '<div class="notice">No snapshot published yet for this pitch. Click "Publish to Stage" to make aggregated results visible on the Stage screen.</div>'}
       </div>
 
       <!-- Generated Shareable Event Links (Admin-Only Access) -->
-      <section class="panel" style="margin-top:14px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <section class="panel" style="margin-top:22px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:10px">
           <div>
             <h3 style="margin:0 0 4px">🔗 Generated Shareable Event Links</h3>
             <p class="detail-label" style="margin:0">Distribute these direct URLs to your audience and projection team. The investor app has zero admin buttons.</p>
           </div>
-          <span class="live-stat-chip blue">Admin Control Only</span>
+          <span class="live-stat-chip blue" style="font-weight:800">Admin Control Only</span>
         </div>
 
-        <div class="link-gen-container" style="margin-top:14px">
+        <div class="link-gen-container">
           <div class="link-gen-row">
             <span class="link-gen-title">📱 <strong>Investor Voting App</strong></span>
             <input id="admin-link-investor" class="link-gen-url" value="${investorURL}" readonly>
@@ -2302,16 +2340,31 @@
         const inputEl = document.getElementById(targetId);
         if (inputEl) {
           const val = inputEl.value || inputEl.textContent;
+          const triggerFeedback = () => {
+            const origText = copyBtn.textContent;
+            copyBtn.textContent = '✓ Copied!';
+            copyBtn.style.background = '#10b981';
+            copyBtn.style.color = '#fff';
+            setTimeout(() => {
+              copyBtn.textContent = origText;
+              copyBtn.style.background = '';
+              copyBtn.style.color = '';
+            }, 1800);
+          };
+
           if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(val).then(() => {
               toast('✓ Link copied to clipboard!');
+              triggerFeedback();
             }).catch(() => {
               toast(`Copied: ${val}`);
+              triggerFeedback();
             });
           } else {
             inputEl.select?.();
             document.execCommand?.('copy');
             toast('✓ Link copied to clipboard!');
+            triggerFeedback();
           }
         }
       }

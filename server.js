@@ -46,9 +46,12 @@ function getCacheControl(filePath) {
   if (base === 'manifest.webmanifest') {
     return 'public, max-age=86400';
   }
+  if (process.env.NODE_ENV !== 'production') {
+    return 'no-cache, no-store, must-revalidate';
+  }
   const ext = path.extname(filePath).toLowerCase();
   if (['.css', '.js', '.png', '.svg', '.jpg', '.woff', '.woff2'].includes(ext)) {
-    return 'public, max-age=31536000, immutable';
+    return 'public, max-age=3600, must-revalidate';
   }
   return 'public, max-age=0, must-revalidate';
 }
