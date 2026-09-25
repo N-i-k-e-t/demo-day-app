@@ -41,6 +41,8 @@ alter table demo_investors add column if not exists last_active timestamptz defa
 create table if not exists demo_responses (
   id bigint generated always as identity primary key,
   investor_key text not null,
+  investor_name text,
+  investor_email text,
   startup_id text not null,
   startup_name text,
   response_type text not null check(response_type in ('INTERESTED','EXPLORE','NOT_INTERESTED')),
@@ -48,6 +50,8 @@ create table if not exists demo_responses (
   idempotency_key text not null unique
 );
 
+alter table demo_responses add column if not exists investor_name text;
+alter table demo_responses add column if not exists investor_email text;
 alter table demo_responses add column if not exists startup_name text;
 alter table demo_responses add column if not exists idempotency_key text;
 

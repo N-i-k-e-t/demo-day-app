@@ -92,6 +92,7 @@
     lastSync: null,
     isSyncing: false
   };
+  let adminRosterFilter = 'all'; // 'all' | 'online' | 'voted' | 'pending'
 
   // Real-time Activity Ticker (streaming events)
   const realtimeStream = [];
@@ -351,8 +352,10 @@
         } else if (item.type === 'SUBMIT_RESPONSE') {
           const { error } = await supabase.from('demo_responses').upsert({
             investor_key: item.payload.investorKey,
+            investor_name: item.payload.investorName || null,
+            investor_email: item.payload.investorEmail || null,
             startup_id: item.payload.startupId,
-            startup_name: item.payload.startupName,
+            startup_name: item.payload.startupName || null,
             response_type: item.payload.responseType,
             idempotency_key: item.payload.idempotencyKey,
             recorded_at: item.payload.recordedAt || new Date().toISOString()
@@ -588,7 +591,7 @@
     try {
       const { data, error } = await supabase
         .from('demo_responses')
-        .select('startup_id, startup_name, response_type, recorded_at, idempotency_key')
+        .select('startup_id, startup_name, response_type, recorded_at, idempotency_key, investor_name, investor_email')
         .eq('investor_key', key);
 
       if (!error && data && data.length > 0) {
@@ -599,6 +602,10 @@
             bucket[r.startup_id] = {
               response: r.response_type,
               startupId: r.startup_id,
+              startupName: r.startup_name || '',
+              investorKey: key,
+              investorName: r.investor_name || session?.name || '',
+              investorEmail: r.investor_email || session?.email || '',
               recordedAt: r.recorded_at,
               idempotencyKey: r.idempotency_key
             };
@@ -626,6 +633,39 @@
       renderInvestor();
       toast('Signed out. Select a saved investor profile or enter new credentials.');
     }
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     LIVE INVESTOR PRESENCE HEARTBEAT (Keeps last_active fresh)
+     ══════════════════════════════════════════════════════════════ */
+  let lastHeartbeatTime = 0;
+  async function sendInvestorHeartbeat() {
+    if (!session?.id || !supabase || !navigator.onLine) return;
+    const now = Date.now();
+    if (now - lastHeartbeatTime < 15000) return; // rate-limit to at most once per 15s
+    lastHeartbeatTime = now;
+    try {
+      await supabase
+        .from('demo_investors')
+        .update({ last_active: new Date().toISOString() })
+        .eq('investor_key', session.id);
+    } catch (_) {
+      // quiet fail
+    }
+  }
+
+  setInterval(() => {
+    if (session?.id && navigator.onLine) {
+      sendInvestorHeartbeat();
+    }
+  }, 25000);
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('focus', () => {
+      if (session?.id && navigator.onLine) {
+        sendInvestorHeartbeat();
+      }
+    });
   }
 
   /* ══════════════════════════════════════════════════════════════
@@ -714,7 +754,7 @@
       // 2. Fetch all immutable responses
       const { data: respData, error: respErr } = await supabase
         .from('demo_responses')
-        .select('investor_key, startup_id, response_type, recorded_at')
+        .select('investor_key, investor_name, investor_email, startup_id, startup_name, response_type, recorded_at, idempotency_key')
         .order('recorded_at', { ascending: false });
 
       if (!respErr && respData) {
@@ -770,12 +810,15 @@
         const newResp = payload.new;
         if (newResp) {
           // Check if not already in admin list
-          if (!adminLiveStats.responses.some(r => r.investor_key === newResp.investor_key && r.startup_id === newResp.startup_id)) {
+          const existingIdx = adminLiveStats.responses.findIndex(r => r.investor_key === newResp.investor_key && r.startup_id === newResp.startup_id);
+          if (existingIdx !== -1) {
+            adminLiveStats.responses[existingIdx] = newResp;
+          } else {
             adminLiveStats.responses.unshift(newResp);
           }
           // Push to live activity stream
           const invObj = adminLiveStats.investors.find(i => i.investor_key === newResp.investor_key);
-          const invName = invObj ? invObj.full_name : 'Investor';
+          const invName = newResp.investor_name || (invObj ? invObj.full_name : 'Investor');
           pushRealtimeStreamItem({
             type: 'RESPONSE_SUBMITTED',
             actor: invName,
@@ -805,6 +848,22 @@
             detail: `${newInv.full_name} (${newInv.email}) registered passwordlessly`,
             time: new Date()
           });
+          if (route === 'admin' && adminUnlocked) {
+            renderAdmin();
+          }
+        }
+      });
+
+      // Realtime Postgres Changes: Investor presence update (last_active heartbeat)
+      channel.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'demo_investors' }, (payload) => {
+        const updInv = payload.new;
+        if (updInv) {
+          const idx = adminLiveStats.investors.findIndex(i => i.investor_key === updInv.investor_key);
+          if (idx !== -1) {
+            adminLiveStats.investors[idx] = { ...adminLiveStats.investors[idx], ...updInv };
+          } else {
+            adminLiveStats.investors.unshift(updInv);
+          }
           if (route === 'admin' && adminUnlocked) {
             renderAdmin();
           }
@@ -932,6 +991,10 @@
       response: choice,
       startupId: selectedStartup.id,
       startupNumber: selectedStartup.n,
+      startupName: selectedStartup.name,
+      investorKey: key,
+      investorName: session.name,
+      investorEmail: session.email,
       recordedAt: new Date().toISOString(),
       idempotencyKey: `${key}:${selectedStartup.id}`
     };
@@ -965,6 +1028,8 @@
       type: 'SUBMIT_RESPONSE',
       payload: {
         investorKey: key,
+        investorName: session.name,
+        investorEmail: session.email,
         startupId: selectedStartup.id,
         startupName: selectedStartup.name,
         responseType: choice,
@@ -974,11 +1039,16 @@
     });
 
     recordFeed('RESPONSE_SUBMITTED', {
+      actorId: key,
+      actorName: session.name,
+      actorEmail: session.email,
       startupId: selectedStartup.id,
       startupName: selectedStartup.name,
       responseType: choice,
       detail: `${session.name} voted ${responseLabel(choice)} on ${selectedStartup.name}`
     });
+
+    sendInvestorHeartbeat();
   }
 
   function backToList() {
@@ -1271,16 +1341,42 @@
 
     const currentStartup = startups[state.pitch - 1] || startups[0];
 
-    // Live Metrics: Derived from Supabase data + local fallback (Clean 0 initial state, zero dummy defaults)
-    const totalInvestors = adminLiveStats.investors.length || Object.keys(state.responseByInvestor).length;
+    // Effective Registered Investors List (Cloud + Local Session Fallback)
+    const effectiveInvestors = adminLiveStats.investors.length > 0
+      ? adminLiveStats.investors
+      : (session ? [{ investor_key: session.id, full_name: session.name, email: session.email, joined_at: session.joinedAt, last_active: new Date().toISOString() }] : []);
+
+    const totalInvestors = effectiveInvestors.length;
     const totalResponsesCount = adminLiveStats.responses.length || Object.values(state.responseByInvestor).reduce((acc, cur) => acc + Object.keys(cur || {}).length, 0);
+
+    // Online Now Detection (Active within 60s or current session is online)
+    const now = Date.now();
+    const isInvestorOnline = (inv) => {
+      if (session?.id === inv.investor_key && navigator.onLine) return true;
+      if (!inv.last_active) return false;
+      const diff = now - new Date(inv.last_active).getTime();
+      return diff >= 0 && diff < 60000;
+    };
+    const onlineNowCount = effectiveInvestors.filter(isInvestorOnline).length;
+
+    // Distinct investors who have submitted at least 1 response overall
+    const allInvestorKeysWithVotes = new Set([
+      ...adminLiveStats.responses.map(r => r.investor_key),
+      ...Object.keys(state.responseByInvestor).filter(k => Object.keys(state.responseByInvestor[k] || {}).length > 0)
+    ]);
+    const totalVotedInvestorsCount = allInvestorKeysWithVotes.size;
 
     // Current Pitch Submission Stats
     const currentResponses = adminLiveStats.responses.length > 0
       ? adminLiveStats.responses.filter(r => r.startup_id === currentStartup.id)
       : Object.values(state.responseByInvestor).map(b => b[currentStartup.id]).filter(Boolean);
 
-    const currentSubmittedCount = currentResponses.length;
+    const currentPitchVotedKeys = new Set(
+      adminLiveStats.responses.length > 0
+        ? currentResponses.map(r => r.investor_key)
+        : Object.keys(state.responseByInvestor).filter(k => state.responseByInvestor[k]?.[currentStartup.id])
+    );
+    const currentSubmittedCount = currentPitchVotedKeys.size;
     const currentCompletionPct = totalInvestors > 0 ? Math.round((currentSubmittedCount / totalInvestors) * 100) : 0;
 
     const currentInterested = currentResponses.filter(r => (r.response_type || r.response) === RESPONSE.INTERESTED).length;
@@ -1334,26 +1430,36 @@
       </section>
 
       <!-- KPI Grid -->
-      <div class="dashboard">
+      <div class="dashboard" style="grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px;">
         <div class="kpi">
           <small>Registered Investors</small>
           <strong>${totalInvestors}</strong>
           <span class="detail-label">Passwordless accounts</span>
         </div>
+        <div class="kpi" style="border-color: ${onlineNowCount > 0 ? '#86efac' : 'var(--line)'}; background: ${onlineNowCount > 0 ? '#f0fdf4' : '#fff'}">
+          <small style="color: #15803d"><span class="live-pulse-dot"></span> Logged In Now</small>
+          <strong style="color: #166534">${onlineNowCount}</strong>
+          <span class="detail-label">${onlineNowCount > 0 ? 'Active in last 60s' : 'Awaiting sign-ins'}</span>
+        </div>
         <div class="kpi">
-          <small>Current Pitch</small>
-          <strong>${state.pitch}/${TOTAL_PITCHES}</strong>
-          <span class="detail-label">${currentStartup.name}</span>
+          <small>Responded Investors</small>
+          <strong>${totalVotedInvestorsCount} <span style="font-size:16px;font-weight:600;color:#94a3b8">/ ${totalInvestors}</span></strong>
+          <span class="detail-label">${totalInvestors > 0 ? Math.round((totalVotedInvestorsCount / totalInvestors) * 100) : 0}% active participation</span>
+        </div>
+        <div class="kpi">
+          <small>Pitch ${state.pitch} Votes</small>
+          <strong>${currentSubmittedCount} <span style="font-size:16px;font-weight:600;color:#94a3b8">/ ${totalInvestors}</span></strong>
+          <span class="detail-label">${currentPending} pending for ${currentStartup.name}</span>
         </div>
         <div class="kpi">
           <small>Total Submissions</small>
           <strong>${totalResponsesCount}</strong>
-          <span class="detail-label">Across all startups</span>
+          <span class="detail-label">Across all 15 startups</span>
         </div>
         <div class="kpi">
           <small>Live Network State</small>
-          <strong style="font-size:20px;margin-top:8px">${netState === 'ONLINE' ? '🟢 Cloud Connected' : '🔴 Local / Offline'}</strong>
-          <span class="detail-label">${outboxQueue.length} pending sync items</span>
+          <strong style="font-size:19px;margin-top:6px">${netState === 'ONLINE' ? '🟢 Cloud Sync' : '🔴 Local Only'}</strong>
+          <span class="detail-label">${outboxQueue.length} pending outbox items</span>
         </div>
       </div>
 
@@ -1461,12 +1567,20 @@
 
       <!-- Live Registered Investors Roster -->
       <div class="panel" style="margin-top:14px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px">
           <div>
-            <h3>Live Registered Investors Roster (${totalInvestors})</h3>
-            <p class="detail-label">Tracks each passwordless user and how many startups they have scored.</p>
+            <h3 style="margin:0 0 4px">Live Registered Investors Roster (${totalInvestors})</h3>
+            <p class="detail-label" style="margin:0">Live presence and pitch-by-pitch user response tracker.</p>
           </div>
-          <button class="admin-btn blue" data-admin="refresh-data" style="font-size:11px;padding:6px 12px">↻ Refresh Cloud Data</button>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <div class="roster-tabs">
+              <button class="roster-tab-btn ${adminRosterFilter === 'all' ? 'active' : ''}" data-roster-filter="all">All (${totalInvestors})</button>
+              <button class="roster-tab-btn ${adminRosterFilter === 'online' ? 'active' : ''}" data-roster-filter="online">🟢 Online Now (${onlineNowCount})</button>
+              <button class="roster-tab-btn ${adminRosterFilter === 'voted' ? 'active' : ''}" data-roster-filter="voted">✅ Voted Pitch ${state.pitch} (${currentSubmittedCount})</button>
+              <button class="roster-tab-btn ${adminRosterFilter === 'pending' ? 'active' : ''}" data-roster-filter="pending">⏳ Pending Pitch ${state.pitch} (${currentPending})</button>
+            </div>
+            <button class="admin-btn blue" data-admin="refresh-data" style="font-size:11px;padding:6px 12px">↻ Refresh Cloud Data</button>
+          </div>
         </div>
         <div class="roster-wrap">
           <table class="roster-table">
@@ -1474,6 +1588,7 @@
               <tr>
                 <th>Investor</th>
                 <th>Email</th>
+                <th>Pitch ${state.pitch} Vote (${currentStartup.name})</th>
                 <th>Submissions Done</th>
                 <th>User Scores (👍 / ? / 👎)</th>
                 <th>Joined</th>
@@ -1482,12 +1597,19 @@
             </thead>
             <tbody>
               ${(() => {
-                const list = adminLiveStats.investors.length > 0
-                  ? adminLiveStats.investors
-                  : (session ? [{ investor_key: session.id, full_name: session.name, email: session.email, joined_at: session.joinedAt }] : []);
-                if (list.length === 0) {
-                  return `<tr><td colspan="6" style="text-align:center;padding:24px;color:#64748b">No investors registered yet. All live submissions and scores will appear here in real time.</td></tr>`;
+                let list = effectiveInvestors;
+                if (adminRosterFilter === 'online') {
+                  list = list.filter(isInvestorOnline);
+                } else if (adminRosterFilter === 'voted') {
+                  list = list.filter(inv => currentPitchVotedKeys.has(inv.investor_key));
+                } else if (adminRosterFilter === 'pending') {
+                  list = list.filter(inv => !currentPitchVotedKeys.has(inv.investor_key));
                 }
+
+                if (list.length === 0) {
+                  return `<tr><td colspan="7" style="text-align:center;padding:24px;color:#64748b">No investors found matching filter "${adminRosterFilter}". All live submissions and scores will appear here in real time.</td></tr>`;
+                }
+
                 return list.map(inv => {
                   const invResps = adminLiveStats.responses.filter(r => r.investor_key === inv.investor_key);
                   const localResps = state.responseByInvestor[inv.investor_key] ? Object.values(state.responseByInvestor[inv.investor_key]) : [];
@@ -1503,18 +1625,30 @@
                   const userExplore = respsToCount.filter(r => (r.response_type || r.response) === RESPONSE.EXPLORE).length;
                   const userNotInterested = respsToCount.filter(r => (r.response_type || r.response) === RESPONSE.NOT_INTERESTED).length;
 
+                  // Pitch-specific vote for current pitch
+                  const currentPitchVoteObj = respsToCount.find(r => (r.startup_id || r.startupId) === currentStartup.id);
+                  const currentPitchVote = currentPitchVoteObj ? (currentPitchVoteObj.response_type || currentPitchVoteObj.response) : null;
+                  const currentVoteChip = currentPitchVote === RESPONSE.INTERESTED
+                    ? '<span class="live-stat-chip green" style="padding:2px 8px;font-size:10px;font-weight:800">👍 Interested</span>'
+                    : currentPitchVote === RESPONSE.EXPLORE
+                    ? '<span class="live-stat-chip yellow" style="padding:2px 8px;font-size:10px;font-weight:800">? Explore</span>'
+                    : currentPitchVote === RESPONSE.NOT_INTERESTED
+                    ? '<span class="live-stat-chip blue" style="padding:2px 8px;font-size:10px;font-weight:800">👎 Not Interested</span>'
+                    : '<span class="live-stat-chip gray" style="padding:2px 8px;font-size:10px">⏳ Pending</span>';
+
                   const lastActiveMs = inv.last_active ? (Date.now() - new Date(inv.last_active).getTime()) : 0;
                   const isSelf = session?.id === inv.investor_key;
-                  const isOnlineNow = isSelf ? (navigator.onLine && netState === 'ONLINE') : (lastActiveMs > 0 && lastActiveMs < 45000);
+                  const isOnlineNow = isSelf ? (navigator.onLine && netState === 'ONLINE') : (lastActiveMs > 0 && lastActiveMs < 60000);
                   const connBadge = isOnlineNow
-                    ? '<span class="live-stat-chip green" style="padding:1px 6px;font-size:9px">🟢 Live</span>'
+                    ? '<span class="live-stat-chip green" style="padding:1px 6px;font-size:9px"><span class="live-pulse-dot" style="width:6px;height:6px"></span> Online Now</span>'
                     : (lastActiveMs > 0 && lastActiveMs < 180000)
-                    ? '<span class="live-stat-chip yellow" style="padding:1px 6px;font-size:9px">🟡 Idle</span>'
+                    ? '<span class="live-stat-chip yellow" style="padding:1px 6px;font-size:9px">🟡 Idle (&lt;3m)</span>'
                     : '<span class="live-stat-chip gray" style="padding:1px 6px;font-size:9px">⚪ Offline</span>';
 
                   return `<tr>
                     <td><strong>${inv.full_name}</strong> &nbsp; ${connBadge}</td>
                     <td style="color:#64748b">${inv.email}</td>
+                    <td>${currentVoteChip}</td>
                     <td>
                       ${hasUserVotes ? `
                         <div class="mini-prog">
@@ -1989,13 +2123,15 @@
     if (responses.length > 0) {
       responses.forEach(r => {
         const inv = investorsMap.get(r.investor_key) || { full_name: 'Registered Investor', email: r.investor_key };
-        const s = startups.find(st => st.id === r.startup_id) || { n: '-', name: r.startup_id };
+        const invName = r.investor_name || inv.full_name || 'Registered Investor';
+        const invEmail = r.investor_email || inv.email || r.investor_key;
+        const s = startups.find(st => st.id === r.startup_id) || { n: '-', name: r.startup_name || r.startup_id };
         rows.push([
           `"${r.startup_id || ''}"`,
           `"${s.n || ''}"`,
           `"${(s.name || '').replace(/"/g, '""')}"`,
-          `"${(inv.full_name || '').replace(/"/g, '""')}"`,
-          `"${(inv.email || '').replace(/"/g, '""')}"`,
+          `"${invName.replace(/"/g, '""')}"`,
+          `"${invEmail.replace(/"/g, '""')}"`,
           `"${r.response_type || r.response || ''}"`,
           `"${r.recorded_at || ''}"`,
           `"Supabase Cloud Realtime"`
@@ -2005,13 +2141,15 @@
       // Local fallback
       Object.entries(state.responseByInvestor).forEach(([invKey, respObj]) => {
         Object.entries(respObj).forEach(([startupId, item]) => {
-          const s = startups.find(st => st.id === startupId) || { n: '-', name: startupId };
+          const s = startups.find(st => st.id === startupId) || { n: '-', name: item.startupName || startupId };
+          const invName = item.investorName || (session?.id === invKey ? session.name : 'Local Session');
+          const invEmail = item.investorEmail || (session?.id === invKey ? session.email : invKey);
           rows.push([
             `"${startupId}"`,
             `"${s.n || ''}"`,
             `"${(s.name || '').replace(/"/g, '""')}"`,
-            `"Local Session"`,
-            `"${invKey}"`,
+            `"${invName.replace(/"/g, '""')}"`,
+            `"${invEmail.replace(/"/g, '""')}"`,
             `"${item.response || item.response_type || ''}"`,
             `"${item.recordedAt || ''}"`,
             `"Local Device Storage"`
@@ -2150,6 +2288,13 @@
       if (selectBtn) {
         pendingChoice = selectBtn.dataset.selectResponse;
         renderInvestor();
+        return;
+      }
+
+      const rosterFilterBtn = e.target.closest('[data-roster-filter]');
+      if (rosterFilterBtn) {
+        adminRosterFilter = rosterFilterBtn.dataset.rosterFilter;
+        renderAdmin();
         return;
       }
 

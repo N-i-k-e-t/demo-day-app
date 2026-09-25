@@ -652,5 +652,55 @@ img{max-width:100%;height:auto}
   border-radius: 12px !important;
 }
 
+/* ── Live Presence & Roster Filter Controls ── */
+.roster-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.roster-tab-btn {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: all .15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.roster-tab-btn:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.roster-tab-btn.active {
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+  box-shadow: 0 1px 3px rgba(37,99,235,0.25);
+}
+
+.live-pulse-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: livePresencePulse 1.8s infinite;
+}
+
+@keyframes livePresencePulse {
+  0% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(16,185,129,0.7); }
+  70% { transform: scale(1.05); opacity: 0.8; box-shadow: 0 0 0 6px rgba(16,185,129,0); }
+  100% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+}
+
 
 
