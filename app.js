@@ -33,10 +33,10 @@
   const RESPONSE = { INTERESTED: 'INTERESTED', EXPLORE: 'EXPLORE', NOT_INTERESTED: 'NOT_INTERESTED' };
   const COLORS = { INTERESTED: 'green', EXPLORE: 'yellow', NOT_INTERESTED: 'blue' };
 
-  const ORDER_STORAGE_KEY = 'startup-demo-order-v9';
+  const ORDER_STORAGE_KEY = 'startup-demo-order-v10';
 
   // Purge any stale order keys from older sessions
-  ['startup-demo-order', 'startup-demo-order-v1', 'startup-demo-order-v2', 'startup-demo-order-v3', 'startup-demo-order-v4', 'startup-demo-order-v5', 'startup-demo-order-v6', 'startup-demo-order-v7', 'startup-demo-order-v8'].forEach(k => {
+  ['startup-demo-order', 'startup-demo-order-v1', 'startup-demo-order-v2', 'startup-demo-order-v3', 'startup-demo-order-v4', 'startup-demo-order-v5', 'startup-demo-order-v6', 'startup-demo-order-v7', 'startup-demo-order-v8', 'startup-demo-order-v9'].forEach(k => {
     try { localStorage.removeItem(k); } catch (_) {}
   });
 
@@ -51,17 +51,8 @@
       accent: 'blue'
     },
     {
-      id: 's06',
-      n: 2,
-      name: 'WhatsLoan',
-      subSector: 'Agri-Fintech',
-      tagline: 'We bring banks to the farmers with agri loan market place and digital financial identity to empower farmers.',
-      initial: 'W',
-      accent: 'blue'
-    },
-    {
       id: 's03',
-      n: 3,
+      n: 2,
       name: 'EarthSaathi',
       subSector: 'Clean Energy - Climate Tech',
       tagline: '',
@@ -70,7 +61,7 @@
     },
     {
       id: 's09',
-      n: 4,
+      n: 3,
       name: 'NxtQube',
       subSector: 'Agentic Drones',
       tagline: '',
@@ -79,12 +70,21 @@
     },
     {
       id: 's13',
-      n: 5,
+      n: 4,
       name: 'Borse Automotive',
       subSector: 'Agri Robotics',
       tagline: '',
       initial: 'B',
       accent: 'purple'
+    },
+    {
+      id: 's10',
+      n: 5,
+      name: 'GAON NASP',
+      subSector: 'Rural Operating System',
+      tagline: '',
+      initial: 'G',
+      accent: 'yellow'
     },
     {
       id: 's04',
@@ -123,17 +123,8 @@
       accent: 'blue'
     },
     {
-      id: 's10',
-      n: 10,
-      name: 'GAON NASP',
-      subSector: 'Rural Operating System',
-      tagline: '',
-      initial: 'G',
-      accent: 'yellow'
-    },
-    {
       id: 's01',
-      n: 11,
+      n: 10,
       name: 'Mecco',
       subSector: 'Farm Mechanisation',
       tagline: '',
@@ -142,12 +133,21 @@
     },
     {
       id: 's12',
-      n: 12,
+      n: 11,
       name: 'Alt Mat',
       subSector: 'Renewable',
       tagline: '',
       initial: 'A',
       accent: 'green'
+    },
+    {
+      id: 's06',
+      n: 12,
+      name: 'WhatsLoan',
+      subSector: 'Agri-Fintech',
+      tagline: 'We bring banks to the farmers with agri loan market place and digital financial identity to empower farmers.',
+      initial: 'W',
+      accent: 'blue'
     },
     {
       id: 's02',
