@@ -1560,13 +1560,10 @@
     const color = responseColor(r?.response);
     const icon = responseIcon(r?.response);
     return `<button class="startup-card choice-${color}" data-startup="${s.id}">
-      <span class="rank" title="Booth ${s.n}">B${s.n}</span>
+      <span class="rank" title="Startup ${s.n}">${s.n}</span>
       <span class="logo">${s.initial}</span>
       <span class="startup-main">
-        <div style="display:flex;align-items:center;gap:6px">
-          <span class="booth-tag">Booth ${s.n}</span>
-          <strong style="font-size:15px;color:var(--ink)">${s.name}</strong>
-        </div>
+        <strong style="font-size:15px;color:var(--ink)">${s.name}</strong>
         <div style="font-size:12px;color:#0284c7;font-weight:600;margin-top:2px">
           ${s.subSector}
         </div>
@@ -1592,8 +1589,8 @@
 
     return `${renderHeader()}<main class="phone-content">
       <div style="margin-top:4px">
-        <h1 style="font-size:26px;margin:0 0 4px">Startup Booths</h1>
-        <div class="detail-label">Browse all ${TOTAL_PITCHES} startup booths. Tap any booth to record your official response.</div>
+        <h1 style="font-size:26px;margin:0 0 4px">Startup List</h1>
+        <div class="detail-label">Browse all ${TOTAL_PITCHES} startups. Tap any startup to record your official response.</div>
       </div>
       ${renderProgress()}
       <div class="filters">
