@@ -624,6 +624,37 @@
     URL.revokeObjectURL(url);
   }
 
+  function downloadStartupPdf(startupId) {
+    const adminPasscode = window.AdminSession?.passcode || 'thatAff2026@';
+    const downloadUrl = `/admin/metrics/pdf/${startupId}?adminPasscode=${encodeURIComponent(adminPasscode)}`;
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.setAttribute('download', '');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  function printStartupReport(startupId) {
+    const adminPasscode = window.AdminSession?.passcode || 'thatAff2026@';
+    const printUrl = `/admin/metrics/pdf/html/${startupId}?adminPasscode=${encodeURIComponent(adminPasscode)}`;
+    const win = window.open(printUrl, '_blank');
+    if (win) {
+      win.focus();
+    }
+  }
+
+  function downloadAllPdfsZip() {
+    const adminPasscode = window.AdminSession?.passcode || 'thatAff2026@';
+    const downloadUrl = `/admin/metrics/pdf/zip?adminPasscode=${encodeURIComponent(adminPasscode)}`;
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.setAttribute('download', 'Demo-Day-All-13-Startup-PDF-Reports.zip');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   // ══════════════════════════════════════════════════════════════
   // UI RENDERERS
   // ══════════════════════════════════════════════════════════════
@@ -1003,9 +1034,12 @@
                   <td><span class="live-stat-chip blue" style="padding:2px 8px;font-size:11px;font-weight:800">👎 ${s.notInterestedVotes}</span></td>
                   <td><strong>${s.totalActiveVotes}</strong></td>
                   <td style="color:#64748b;font-size:11px">${s.lastVoteAtFormatted ? s.lastVoteAtFormatted.split('•')[1] || s.lastVoteAtFormatted : '—'}</td>
-                  <td style="text-align:center">
-                    <button class="metrics-btn light" style="padding:4px 10px;font-size:11px" data-toggle-startup-expand="${s.startupId}">
+                  <td style="text-align:center;white-space:nowrap">
+                    <button class="metrics-btn light" style="padding:4px 8px;font-size:11px;margin-right:4px" data-toggle-startup-expand="${s.startupId}">
                       ${isExpanded ? '▲ Hide' : `▼ Voters (${s.votedCount})`}
+                    </button>
+                    <button class="metrics-btn primary" style="padding:4px 8px;font-size:11px" data-download-startup-pdf="${s.startupId}" title="Download Official PDF Report">
+                      📄 PDF
                     </button>
                   </td>
                 </tr>
@@ -1068,6 +1102,14 @@
                   </button>
                   <button class="metrics-filter-chip ${voterFilter === 'NOT_VOTED' ? 'active' : ''}" data-startup-voter-filter="NOT_VOTED" data-startup-id="${startup.startupId}">
                     ⏳ Not Voted (${startup.nonVoters.length})
+                  </button>
+                </div>
+                <div style="display:flex;gap:6px;margin-left:auto">
+                  <button class="metrics-btn primary" style="font-size:11px;padding:4px 10px" data-download-startup-pdf="${startup.startupId}" title="Download Official Startup PDF Report">
+                    📄 Download PDF
+                  </button>
+                  <button class="metrics-btn light" style="font-size:11px;padding:4px 10px" data-print-startup-report="${startup.startupId}" title="Print or Save to PDF">
+                    🖨️ Print
                   </button>
                 </div>
               </div>
@@ -1436,6 +1478,67 @@
             📥 Download Raw Metrics Snapshot (JSON)
           </button>
         </div>
+
+        <!-- All PDFs ZIP Package -->
+        <div class="metrics-card accent-indigo">
+          <div class="metrics-card-header">
+            <small>📑 Startup PDF Reports (All 13)</small>
+            <span class="live-stat-chip green" style="font-size:10px">ZIP Archive</span>
+          </div>
+          <p style="font-size:13px;color:#475569;line-height:1.45;margin:10px 0 16px">
+            Download all 13 official startup-wise PDF reports in a single compressed ZIP package. Ready for distribution to founders and investment committees.
+          </p>
+          <button class="metrics-btn primary" style="width:100%;justify-content:center;background:#4f46e5" data-download-all-pdfs-zip="true">
+            📦 Download All 13 Startup PDFs (.ZIP)
+          </button>
+        </div>
+      </div>
+
+      <!-- Individual Startup PDF Reports Panel -->
+      <div class="panel" style="margin-top:24px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+          <div>
+            <h3 style="margin:0 0 4px">Startup-Wise PDF Reports (13 Startups)</h3>
+            <p class="detail-label" style="margin:0">
+              Executive-grade PDF reports with investor breakdowns, sentiment distribution, and verification timestamps.
+            </p>
+          </div>
+          <button class="metrics-btn primary" data-download-all-pdfs-zip="true" style="background:#4f46e5">
+            📦 Download All 13 PDFs (.ZIP)
+          </button>
+        </div>
+
+        <div class="pdf-export-grid">
+          ${state.data.startups.map(s => `
+            <div class="pdf-export-card">
+              <div>
+                <div class="pdf-export-card-header">
+                  <div>
+                    <span class="booth-tag" style="margin-bottom:6px">Booth B${s.pitchNumber}</span>
+                    <div class="pdf-export-card-title">${s.startupName}</div>
+                    <div class="pdf-export-card-sub">${s.subSector}</div>
+                  </div>
+                  <span class="live-stat-chip ${s.totalActiveVotes > 0 ? 'green' : 'blue'}" style="font-size:10.5px">
+                    ${s.totalActiveVotes} Votes
+                  </span>
+                </div>
+                <div class="pdf-export-stats">
+                  <div>Voted: <strong>${s.votedCount}</strong>/${s.eligibleInvestorCount}</div>
+                  <div>Turnout: <strong>${s.participationPct}%</strong></div>
+                  <div>Interested: <strong style="color:#16a34a">${s.interestedVotes}</strong></div>
+                </div>
+              </div>
+              <div class="pdf-export-actions">
+                <button class="metrics-btn primary" data-download-startup-pdf="${s.startupId}">
+                  📥 Download PDF
+                </button>
+                <button class="metrics-btn light" data-print-startup-report="${s.startupId}">
+                  🖨️ View / Print
+                </button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
       </div>
     `;
   }
@@ -1673,6 +1776,32 @@
         else if (type === 'json') exportJsonSnapshot();
       };
     });
+
+    // Individual Startup PDF Download
+    container.querySelectorAll('[data-download-startup-pdf]').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const sId = btn.dataset.downloadStartupPdf;
+        downloadStartupPdf(sId);
+      };
+    });
+
+    // Startup Print / View Report
+    container.querySelectorAll('[data-print-startup-report]').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const sId = btn.dataset.printStartupReport;
+        printStartupReport(sId);
+      };
+    });
+
+    // Download All 13 Startup PDFs ZIP Package
+    container.querySelectorAll('[data-download-all-pdfs-zip]').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        downloadAllPdfsZip();
+      };
+    });
   }
 
   // Public Interface
@@ -1680,6 +1809,9 @@
     render: render,
     loadData: loadData,
     formatIST: formatIST,
+    downloadStartupPdf: downloadStartupPdf,
+    printStartupReport: printStartupReport,
+    downloadAllPdfsZip: downloadAllPdfsZip,
     onRealtimeUpdate: () => {
       loadData(false).then(() => {
         const root = document.getElementById('admin-root');

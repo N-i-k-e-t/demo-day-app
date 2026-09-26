@@ -5,6 +5,7 @@
   "description": "Production-ready mobile-first investor startup selection platform with immutable responses and admin-controlled stage publishing.",
   "scripts": {
     "start": "node server.js",
+    "generate:pdf": "node scripts/generate-startup-pdfs.js",
     "test": "node tests/smoke.js && node tests/concurrency-offline.js",
     "deploy:check": "node tests/deploy-check.js",
     "validate": "npm test && npm run deploy:check"

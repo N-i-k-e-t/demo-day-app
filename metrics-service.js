@@ -6,6 +6,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const pdfGenerator = require('./pdf-generator');
 
 // Extract config from config.js if available
 let SUPABASE_URL = process.env.SUPABASE_URL || 'https://toucgwdalgtkcfhebvgo.supabase.co';
@@ -716,7 +717,7 @@ function verifyAdminAuthorization(req) {
   const customHeader = req.headers['x-admin-passcode'] || req.headers['x-admin-token'] || '';
 
   const parsedUrl = new URL(req.url, 'http://localhost');
-  const queryPasscode = parsedUrl.searchParams.get('passcode') || '';
+  const queryPasscode = parsedUrl.searchParams.get('passcode') || parsedUrl.searchParams.get('adminPasscode') || '';
 
   if (customHeader === ADMIN_PASSCODE) return true;
   if (queryPasscode === ADMIN_PASSCODE) return true;
@@ -819,6 +820,67 @@ async function handleMetricsApiRoute(req, res) {
       });
       res.end(exportData.data);
       return true;
+    }
+
+    if (pathname === '/admin/metrics/pdf/zip') {
+      if (fs.existsSync(pdfGenerator.ZIP_PATH)) {
+        res.writeHead(200, {
+          'Content-Type': 'application/zip',
+          'Content-Disposition': 'attachment; filename="Demo-Day-All-13-Startup-PDF-Reports.zip"'
+        });
+        fs.createReadStream(pdfGenerator.ZIP_PATH).pipe(res);
+        return true;
+      } else {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'ZIP file not yet generated.' }));
+        return true;
+      }
+    }
+
+    if (pathname.startsWith('/admin/metrics/pdf/html/')) {
+      const startupId = pathname.replace('/admin/metrics/pdf/html/', '').trim();
+      const startupData = await getStartupMetrics(startupId, cutoffParam);
+      if (!startupData) {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('Startup not found');
+        return true;
+      }
+      const cutoffDisplay = formatIST(cutoffParam, 'full');
+      const html = pdfGenerator.generateStartupHtml(startupData, cutoffDisplay);
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(html);
+      return true;
+    }
+
+    if (pathname.startsWith('/admin/metrics/pdf/')) {
+      const startupId = pathname.replace('/admin/metrics/pdf/', '').trim();
+      const startup = STARTUPS_MASTER.find(s => s.id === startupId || s.name.toLowerCase() === startupId.toLowerCase());
+      const pitchNum = startup ? startup.pitchNumber : null;
+      const startupName = startup ? startup.name : null;
+
+      const pdfPath = pdfGenerator.findPdfForStartup(startupId, pitchNum, startupName);
+      if (pdfPath && fs.existsSync(pdfPath)) {
+        const filename = path.basename(pdfPath);
+        res.writeHead(200, {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="${filename}"`
+        });
+        fs.createReadStream(pdfPath).pipe(res);
+        return true;
+      } else {
+        // Fallback: render printable HTML
+        const startupData = await getStartupMetrics(startupId, cutoffParam);
+        if (startupData) {
+          const cutoffDisplay = formatIST(cutoffParam, 'full');
+          const html = pdfGenerator.generateStartupHtml(startupData, cutoffDisplay);
+          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+          res.end(html);
+          return true;
+        }
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: `PDF report for '${startupId}' not found.` }));
+        return true;
+      }
     }
 
     // Default unknown /admin/metrics sub-route
