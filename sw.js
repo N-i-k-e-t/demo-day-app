@@ -4,7 +4,7 @@
    fallbacks, cache cleanup, and zero-interference with Supabase API.
    ============================================================ */
 
-const CACHE_NAME = 'startup-demo-live-v2.5.0';
+const CACHE_NAME = 'startup-demo-live-v2.6.0';
 const STATIC_ASSETS = [
   './',
   './index.html',
