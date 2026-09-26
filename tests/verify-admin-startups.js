@@ -14,17 +14,18 @@ console.log('✓ Extracted ' + startups.length + ' startups from STARTUPS_MASTER
 
 const expectedOrder = [
   { n: 1, name: 'Shraddha Farms', subSector: 'Dairy', hasTagline: false },
-  { n: 2, name: 'Mecco', subSector: 'Farm Mechanisation', hasTagline: false },
-  { n: 3, name: 'Kumbhargaon Agro', subSector: 'FPO', hasTagline: false },
-  { n: 4, name: 'Neoperk', subSector: 'Soil & Precision Agriculture', hasTagline: false },
-  { n: 5, name: 'WhatsLoan', subSector: 'Agri-Fintech', hasTagline: true },
-  { n: 6, name: 'GAON NASP', subSector: 'Rural Operating System', hasTagline: false },
-  { n: 7, name: 'EarthSaathi', subSector: 'Clean Energy - Climate Tech', hasTagline: false },
-  { n: 8, name: 'Deccan Pack', subSector: 'Packaging', hasTagline: false },
-  { n: 9, name: 'Poshaqq', subSector: 'Food Processing', hasTagline: true },
-  { n: 10, name: 'NxtQube', subSector: 'Agentic Drones', hasTagline: false },
-  { n: 11, name: 'SP Agro', subSector: 'Farm Mechanisation', hasTagline: false },
-  { n: 12, name: 'Borse Automotive', subSector: 'Agri Robotics', hasTagline: false }
+  { n: 2, name: 'WhatsLoan', subSector: 'Agri-Fintech', hasTagline: true },
+  { n: 3, name: 'EarthSaathi', subSector: 'Clean Energy - Climate Tech', hasTagline: false },
+  { n: 4, name: 'NxtQube', subSector: 'Agentic Drones', hasTagline: false },
+  { n: 5, name: 'Borse Automotive', subSector: 'Agri Robotics', hasTagline: false },
+  { n: 6, name: 'Poshaqq', subSector: 'Food Processing', hasTagline: true },
+  { n: 7, name: 'Kumbhargaon Agro', subSector: 'FPO', hasTagline: false },
+  { n: 8, name: 'SP Agro', subSector: 'Farm Mechanisation', hasTagline: false },
+  { n: 9, name: 'Deccan Pack', subSector: 'Packaging', hasTagline: false },
+  { n: 10, name: 'GAON NASP', subSector: 'Rural Operating System', hasTagline: false },
+  { n: 11, name: 'Mecco', subSector: 'Farm Mechanisation', hasTagline: false },
+  { n: 12, name: 'ALTMAT', subSector: 'Renewable', hasTagline: false },
+  { n: 13, name: 'Neoperk', subSector: 'Soil & Precision Agriculture', hasTagline: false }
 ];
 
 let allMatch = true;
@@ -44,12 +45,12 @@ if (!allMatch) {
   process.exit(1);
 }
 
-// 2. Verify ORDER_STORAGE_KEY is v6
-if (!content.includes("ORDER_STORAGE_KEY = 'startup-demo-order-v6'")) {
-  console.error('FAIL: ORDER_STORAGE_KEY is not v6');
+// 2. Verify ORDER_STORAGE_KEY is v8
+if (!content.includes("ORDER_STORAGE_KEY = 'startup-demo-order-v8'")) {
+  console.error('FAIL: ORDER_STORAGE_KEY is not v8');
   process.exit(1);
 }
-console.log('✓ ORDER_STORAGE_KEY is bumped to v6 to invalidate any stale local order');
+console.log('✓ ORDER_STORAGE_KEY is bumped to v8 to invalidate any stale local order');
 
 // 3. Verify stage & capital removed from renderStartupHeroCard
 const heroCardMatch = content.match(/function renderStartupHeroCard\(s\) \{([\s\S]*?)\}\s*function renderDetailScreen/);

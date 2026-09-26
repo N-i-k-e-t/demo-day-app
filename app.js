@@ -25,7 +25,7 @@
   /* ══════════════════════════════════════════════════════════════
      CONSTANTS & MASTER DATA
      ══════════════════════════════════════════════════════════════ */
-  const TOTAL_PITCHES = 12;
+  const TOTAL_PITCHES = 13;
   const STORAGE_KEY = 'startup-demo-live-v2';
   const SESSION_KEY = 'startup-demo-session-v2';
   const OUTBOX_KEY = 'startup-demo-outbox-v2';
@@ -33,10 +33,10 @@
   const RESPONSE = { INTERESTED: 'INTERESTED', EXPLORE: 'EXPLORE', NOT_INTERESTED: 'NOT_INTERESTED' };
   const COLORS = { INTERESTED: 'green', EXPLORE: 'yellow', NOT_INTERESTED: 'blue' };
 
-  const ORDER_STORAGE_KEY = 'startup-demo-order-v6';
+  const ORDER_STORAGE_KEY = 'startup-demo-order-v8';
 
   // Purge any stale order keys from older sessions
-  ['startup-demo-order', 'startup-demo-order-v1', 'startup-demo-order-v2', 'startup-demo-order-v3', 'startup-demo-order-v4', 'startup-demo-order-v5'].forEach(k => {
+  ['startup-demo-order', 'startup-demo-order-v1', 'startup-demo-order-v2', 'startup-demo-order-v3', 'startup-demo-order-v4', 'startup-demo-order-v5', 'startup-demo-order-v6', 'startup-demo-order-v7'].forEach(k => {
     try { localStorage.removeItem(k); } catch (_) {}
   });
 
@@ -51,35 +51,8 @@
       accent: 'blue'
     },
     {
-      id: 's01',
-      n: 2,
-      name: 'Mecco',
-      subSector: 'Farm Mechanisation',
-      tagline: '',
-      initial: 'M',
-      accent: 'green'
-    },
-    {
-      id: 's08',
-      n: 3,
-      name: 'Kumbhargaon Agro',
-      subSector: 'FPO',
-      tagline: '',
-      initial: 'K',
-      accent: 'green'
-    },
-    {
-      id: 's02',
-      n: 4,
-      name: 'Neoperk',
-      subSector: 'Soil & Precision Agriculture',
-      tagline: '',
-      initial: 'N',
-      accent: 'blue'
-    },
-    {
       id: 's06',
-      n: 5,
+      n: 2,
       name: 'WhatsLoan',
       subSector: 'Agri-Fintech',
       tagline: 'We bring banks to the farmers with agri loan market place and digital financial identity to empower farmers.',
@@ -87,17 +60,8 @@
       accent: 'blue'
     },
     {
-      id: 's10',
-      n: 6,
-      name: 'GAON NASP',
-      subSector: 'Rural Operating System',
-      tagline: '',
-      initial: 'G',
-      accent: 'yellow'
-    },
-    {
       id: 's03',
-      n: 7,
+      n: 3,
       name: 'EarthSaathi',
       subSector: 'Clean Energy - Climate Tech',
       tagline: '',
@@ -105,26 +69,8 @@
       accent: 'green'
     },
     {
-      id: 's05',
-      n: 8,
-      name: 'Deccan Pack',
-      subSector: 'Packaging',
-      tagline: '',
-      initial: 'D',
-      accent: 'blue'
-    },
-    {
-      id: 's04',
-      n: 9,
-      name: 'Poshaqq',
-      subSector: 'Food Processing',
-      tagline: 'Ghar jaisa khana with zero kitchen drama.',
-      initial: 'P',
-      accent: 'yellow'
-    },
-    {
       id: 's09',
-      n: 10,
+      n: 4,
       name: 'NxtQube',
       subSector: 'Agentic Drones',
       tagline: '',
@@ -132,8 +78,35 @@
       accent: 'purple'
     },
     {
+      id: 's13',
+      n: 5,
+      name: 'Borse Automotive',
+      subSector: 'Agri Robotics',
+      tagline: '',
+      initial: 'B',
+      accent: 'purple'
+    },
+    {
+      id: 's04',
+      n: 6,
+      name: 'Poshaqq',
+      subSector: 'Food Processing',
+      tagline: 'Ghar jaisa khana with zero kitchen drama.',
+      initial: 'P',
+      accent: 'yellow'
+    },
+    {
+      id: 's08',
+      n: 7,
+      name: 'Kumbhargaon Agro',
+      subSector: 'FPO',
+      tagline: '',
+      initial: 'K',
+      accent: 'green'
+    },
+    {
       id: 's11',
-      n: 11,
+      n: 8,
       name: 'SP Agro',
       subSector: 'Farm Mechanisation',
       tagline: '',
@@ -141,13 +114,49 @@
       accent: 'green'
     },
     {
+      id: 's05',
+      n: 9,
+      name: 'Deccan Pack',
+      subSector: 'Packaging',
+      tagline: '',
+      initial: 'D',
+      accent: 'blue'
+    },
+    {
+      id: 's10',
+      n: 10,
+      name: 'GAON NASP',
+      subSector: 'Rural Operating System',
+      tagline: '',
+      initial: 'G',
+      accent: 'yellow'
+    },
+    {
+      id: 's01',
+      n: 11,
+      name: 'Mecco',
+      subSector: 'Farm Mechanisation',
+      tagline: '',
+      initial: 'M',
+      accent: 'green'
+    },
+    {
       id: 's12',
       n: 12,
-      name: 'Borse Automotive',
-      subSector: 'Agri Robotics',
+      name: 'ALTMAT',
+      subSector: 'Renewable',
       tagline: '',
-      initial: 'B',
-      accent: 'purple'
+      initial: 'A',
+      accent: 'green'
+    },
+    {
+      id: 's02',
+      n: 13,
+      name: 'Neoperk',
+      subSector: 'Soil & Precision Agriculture',
+      tagline: '',
+      initial: 'N',
+      accent: 'blue'
     }
   ];
 
@@ -1899,7 +1908,7 @@
         <img src="assets/logo.png" alt="AFF Logo" style="width:68px;height:68px;margin:0 auto 10px;display:block;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.08))">
         <div class="hero-logo" style="justify-content:center">Investor Hub</div>
         <h2>Welcome to ${orgState.eventTitle || 'AFF Demo Day 2026'}</h2>
-        <p>Passwordless voting — sign in to score all 12 startups live. Your credentials and scores are preserved safely across sessions.</p>
+        <p>Passwordless voting — sign in to score all 13 startups live. Your credentials and scores are preserved safely across sessions.</p>
       </section>
 
       ${hasSaved ? `
@@ -1951,7 +1960,7 @@
               <span>🔢 Startup Booth Order & Sequence</span>
               <span class="live-stat-chip blue" style="font-size:10.5px;padding:3px 10px;font-weight:800">Live Drag & Drop</span>
             </h3>
-            <p class="detail-label" style="margin:0">Drag handle ⠿ or use ▲ / ▼ buttons to adjust pitch sequence. Booth 1 to 12 renumbers dynamically in real time.</p>
+            <p class="detail-label" style="margin:0">Drag handle ⠿ or use ▲ / ▼ buttons to adjust pitch sequence. Booth 1 to 13 renumbers dynamically in real time.</p>
           </div>
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <button class="admin-btn dark" data-action="broadcast-order" style="font-weight:850;padding:8px 16px;font-size:12px;background:#0f172a;color:#ffffff;display:inline-flex;align-items:center;gap:6px">
@@ -1981,7 +1990,7 @@
         </div>
 
         <div class="notice" style="margin-top:14px;background:#f0fdf4;border-color:#bbf7d0;color:#166534;font-size:12.5px">
-          <strong>💡 Zero Vote Loss Guarantee:</strong> All investor responses are stored by immutable Startup ID. Adjusting sequence safely updates Booth 1–12 across the Admin, Stage, and all attendee screens.
+          <strong>💡 Zero Vote Loss Guarantee:</strong> All investor responses are stored by immutable Startup ID. Adjusting sequence safely updates Booth 1–13 across the Admin, Stage, and all attendee screens.
         </div>
       </div>
     `;
@@ -2185,9 +2194,9 @@
       <section class="admin-hero-live">
         <div class="admin-hero-top">
           <div class="admin-hero-meta">
-            <span class="eyebrow" style="color:#38bdf8;background:rgba(56,189,248,0.12);padding:4px 12px;border-radius:999px;border:1px solid rgba(56,189,248,0.25);display:inline-block;margin-bottom:6px">12 STARTUP BOOTHS • REAL-TIME INVESTOR RESPONSES</span>
+            <span class="eyebrow" style="color:#38bdf8;background:rgba(56,189,248,0.12);padding:4px 12px;border-radius:999px;border:1px solid rgba(56,189,248,0.25);display:inline-block;margin-bottom:6px">13 STARTUP BOOTHS • REAL-TIME INVESTOR RESPONSES</span>
             <h2>Startup Demo Day Response Hub</h2>
-            <p>Live responses recorded per startup across all 12 booths with instant syndicate sentiment.</p>
+            <p>Live responses recorded per startup across all 13 booths with instant syndicate sentiment.</p>
           </div>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             <span class="net-badge online"><span class="live-pulse-dot" style="width:7px;height:7px"></span> Realtime Submissions Stream</span>
@@ -2198,7 +2207,7 @@
           <div class="live-completion-num">${totalResponsesCount > 0 ? totalResponsesCount : '0'} <span style="font-size:22px;font-weight:600;color:#94a3b8">/ ${maxExpectedResponses > 0 ? maxExpectedResponses : '0'}</span></div>
           <div class="live-completion-desc">
             <strong>${totalResponsesCount > 0 ? `${overallCompletionPct}% of total expected booth responses recorded` : 'Awaiting initial investor responses'}</strong>
-            <span>${totalInvestors > 0 ? `${totalVotedInvestorsCount} of ${totalInvestors} investors active (${allDoneInvestorsCount} completed all 12 booths)` : 'Awaiting live investor participation'}</span>
+            <span>${totalInvestors > 0 ? `${totalVotedInvestorsCount} of ${totalInvestors} investors active (${allDoneInvestorsCount} completed all 13 booths)` : 'Awaiting live investor participation'}</span>
           </div>
         </div>
 
@@ -2213,7 +2222,7 @@
             <span class="live-stat-chip blue">👎 <strong>${allNotInterested}</strong> Not My Area</span>
             <span class="live-stat-chip gray">⏳ <strong>${Math.max(0, maxExpectedResponses - totalResponsesCount)}</strong> Pending</span>
           ` : `
-            <span class="live-stat-chip gray" style="font-weight:600;padding:6px 14px">— Awaiting live responses across 12 startup booths —</span>
+            <span class="live-stat-chip gray" style="font-weight:600;padding:6px 14px">— Awaiting live responses across 13 startup booths —</span>
           `}
         </div>
       </section>
@@ -2236,14 +2245,14 @@
           <span class="detail-label">${totalInvestors > 0 ? Math.round((totalVotedInvestorsCount / totalInvestors) * 100) : 0}% participated</span>
         </div>
         <div class="kpi kpi-pitch">
-          <small>🎯 All 12 Done</small>
+          <small>🎯 All 13 Done</small>
           <strong>${allDoneInvestorsCount} <span style="font-size:18px;font-weight:600;color:#94a3b8">/ ${totalInvestors}</span></strong>
           <span class="detail-label">${inProgressInvestorsCount} in progress</span>
         </div>
         <div class="kpi kpi-total">
           <small>📈 Total Responses</small>
           <strong>${totalResponsesCount}</strong>
-          <span class="detail-label">Across all 12 booths</span>
+          <span class="detail-label">Across all 13 booths</span>
         </div>
         <div class="kpi kpi-network">
           <small>🌐 Cloud Sync</small>
@@ -2315,10 +2324,10 @@
       <div class="panel" style="margin-top:22px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
           <div>
-            <h3 style="margin:0 0 4px">Startup Booth Completion Matrix (All 12 Startups)</h3>
+            <h3 style="margin:0 0 4px">Startup Booth Completion Matrix (All 13 Startups)</h3>
             <p class="detail-label" style="margin:0">Real-time breakdown of how many investors have filled their response for each startup booth.</p>
           </div>
-          <span class="live-stat-chip blue" style="font-weight:800;font-size:11px">12 Booths Total</span>
+          <span class="live-stat-chip blue" style="font-weight:800;font-size:11px">13 Booths Total</span>
         </div>
         <div class="roster-wrap">
           <table class="roster-table">
@@ -2385,13 +2394,13 @@
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
           <div>
             <h3 style="margin:0 0 4px">Live Registered Investors Roster (${totalInvestors})</h3>
-            <p class="detail-label" style="margin:0">Live presence and per-startup responses tracker across all 12 booths.</p>
+            <p class="detail-label" style="margin:0">Live presence and per-startup responses tracker across all 13 booths.</p>
           </div>
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <div class="roster-tabs">
               <button class="roster-tab-btn ${adminRosterFilter === 'all' ? 'active' : ''}" data-roster-filter="all">All (${totalInvestors})</button>
               <button class="roster-tab-btn ${adminRosterFilter === 'online' ? 'active' : ''}" data-roster-filter="online">Online Now (${onlineNowCount})</button>
-              <button class="roster-tab-btn ${adminRosterFilter === 'complete' ? 'active' : ''}" data-roster-filter="complete">All 12 Done (${allDoneInvestorsCount})</button>
+              <button class="roster-tab-btn ${adminRosterFilter === 'complete' ? 'active' : ''}" data-roster-filter="complete">All 13 Done (${allDoneInvestorsCount})</button>
               <button class="roster-tab-btn ${adminRosterFilter === 'progress' ? 'active' : ''}" data-roster-filter="progress">In Progress (${inProgressInvestorsCount})</button>
               <button class="roster-tab-btn ${adminRosterFilter === 'unvoted' ? 'active' : ''}" data-roster-filter="unvoted">No Responses (${noResponseInvestorsCount})</button>
             </div>
@@ -2403,7 +2412,7 @@
             <thead>
               <tr>
                 <th>Investor Name & Details</th>
-                <th>Responses Per Startup (12 Booths)</th>
+                <th>Responses Per Startup (13 Booths)</th>
                 <th>Progress</th>
                 <th>Sentiment (👍 / ? / 👎)</th>
                 <th>Joined</th>
@@ -2436,13 +2445,13 @@
                   const hasUserVotes = count > 0;
                   const pct = Math.round((count / TOTAL_PITCHES) * 100);
                   const badgeClass = count === TOTAL_PITCHES ? 'complete' : count > 0 ? 'progress' : 'pending';
-                  const badgeLabel = count === TOTAL_PITCHES ? 'All 12 Completed' : count > 0 ? 'In Progress' : 'No Responses Yet';
+                  const badgeLabel = count === TOTAL_PITCHES ? 'All 13 Completed' : count > 0 ? 'In Progress' : 'No Responses Yet';
 
                   const userInterested = Object.values(respMap).filter(v => v === RESPONSE.INTERESTED).length;
                   const userExplore = Object.values(respMap).filter(v => v === RESPONSE.EXPLORE).length;
                   const userNotInterested = Object.values(respMap).filter(v => v === RESPONSE.NOT_INTERESTED).length;
 
-                  // 12 Booth Badges per startup
+                  // 13 Booth Badges per startup
                   const boothBadges = startups.map(s => {
                     const resp = respMap[s.id];
                     if (resp === RESPONSE.INTERESTED) {
@@ -2694,7 +2703,7 @@
           </div>
           <h1>${orgState.eventTitle || 'AFF Demo Day 2026'} is Live</h1>
           <p>
-            Hosted by <strong>${orgState.name || 'Asian Founders Fund (AFF)'}</strong>. 12 venture-backed tech startups pitching live to accredited investors and syndicate partners.
+            Hosted by <strong>${orgState.name || 'Asian Founders Fund (AFF)'}</strong>. 13 venture-backed tech startups pitching live to accredited investors and syndicate partners.
           </p>
           <div class="org-actions-row">
             <button class="btn-org-secondary" data-action="org-admin-login">Organiser Admin Access</button>
@@ -2708,11 +2717,11 @@
             <div class="org-event-title">
               <span class="eyebrow" style="color:#2563eb">ACTIVE LIVE EVENT</span>
               <h2>${orgState.eventTitle || 'AFF Demo Day 2026'}</h2>
-              <p>Hosted by <strong>${orgState.name || 'Asian Founders Fund (AFF)'}</strong> • 12 Pre-Configured Startups • Live Voting in Progress</p>
+              <p>Hosted by <strong>${orgState.name || 'Asian Founders Fund (AFF)'}</strong> • 13 Pre-Configured Startups • Live Voting in Progress</p>
             </div>
             <div class="org-event-badges">
               <span class="net-badge online"><i></i> Live Pitching Active</span>
-              <span class="live-stat-chip blue">12 Tech Startups</span>
+              <span class="live-stat-chip blue">13 Tech Startups</span>
               <span class="live-stat-chip green">1,000+ Capacity</span>
             </div>
           </div>
