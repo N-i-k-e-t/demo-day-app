@@ -46,10 +46,7 @@
       n: 1,
       name: 'Shraddha Farms',
       subSector: 'Dairy',
-      stage: 'Growth Stage',
-      capital: '₹5 Cr',
-      headline: 'Pure Farm-Fresh Dairy & High-Tech Cattle Management',
-      tagline: 'Modern tech-enabled dairy farming, ethical herd welfare, and direct cold-chain supply of pure farm-fresh dairy products.',
+      tagline: '',
       initial: 'S',
       accent: 'blue'
     },
@@ -58,10 +55,7 @@
       n: 2,
       name: 'Mecco',
       subSector: 'Farm Mechanisation',
-      stage: 'Early Stage',
-      capital: '₹3 Cr',
-      headline: 'Advanced Farm Mechanisation & Modern Agri Equipment',
-      tagline: 'Empowering farmers with high-efficiency mechanised equipment and smart agricultural tools to multiply harvest yield.',
+      tagline: '',
       initial: 'M',
       accent: 'green'
     },
@@ -70,10 +64,7 @@
       n: 3,
       name: 'Kumbhargaon Agro',
       subSector: 'FPO',
-      stage: 'Growth Stage',
-      capital: '₹3 Cr',
-      headline: 'Farmer Producer Collective & Direct Market Linkages',
-      tagline: 'Farmer Producer Organisation empowering rural grower collectives with bulk input procurement, grading, and direct market access.',
+      tagline: '',
       initial: 'K',
       accent: 'green'
     },
@@ -82,10 +73,7 @@
       n: 4,
       name: 'Neoperk',
       subSector: 'Soil & Precision Agriculture',
-      stage: 'Seed Stage',
-      capital: '₹2 Cr',
-      headline: 'Real-Time Soil Health Diagnostics & Precision Insights',
-      tagline: 'Instant portable soil testing and data-driven crop advisory empowering growers to optimize fertilizer usage and crop yields.',
+      tagline: '',
       initial: 'N',
       accent: 'blue'
     },
@@ -94,9 +82,6 @@
       n: 5,
       name: 'WhatsLoan',
       subSector: 'Agri-Fintech',
-      stage: 'Early Stage',
-      capital: '₹5 Cr',
-      headline: 'Bringing banks closer to farmers with agri-loan marketplace.',
       tagline: 'We bring banks to the farmers with agri loan market place and digital financial identity to empower farmers.',
       initial: 'W',
       accent: 'blue'
@@ -106,10 +91,7 @@
       n: 6,
       name: 'GAON NASP',
       subSector: 'Rural Operating System',
-      stage: 'Early Stage',
-      capital: '₹4 Cr',
-      headline: 'Next-Gen Rural Digital Operating System for Villages',
-      tagline: 'Comprehensive rural operating system connecting grassroots communities to digital banking, logistics, and government services.',
+      tagline: '',
       initial: 'G',
       accent: 'yellow'
     },
@@ -118,10 +100,7 @@
       n: 7,
       name: 'EarthSaathi',
       subSector: 'Clean Energy - Climate Tech',
-      stage: 'Early Stage',
-      capital: '₹4 Cr',
-      headline: 'Decarbonizing Agriculture with Clean Energy Climate Tech',
-      tagline: 'Pioneering renewable energy innovations and climate-resilient sustainability solutions for rural enterprises and farming.',
+      tagline: '',
       initial: 'E',
       accent: 'green'
     },
@@ -130,10 +109,7 @@
       n: 8,
       name: 'Deccan Pack',
       subSector: 'Packaging',
-      stage: 'Early Stage',
-      capital: '₹3.5 Cr',
-      headline: 'Sustainable & High-Durability Agro Packaging Systems',
-      tagline: 'Next-generation eco-friendly packaging designed to preserve freshness, extend shelf-life, and cut farm-to-retail transit loss.',
+      tagline: '',
       initial: 'D',
       accent: 'blue'
     },
@@ -142,10 +118,7 @@
       n: 9,
       name: 'Poshaqq',
       subSector: 'Food Processing',
-      stage: 'Growth Stage',
-      capital: '₹2.5 Cr',
-      headline: 'Ghar jaisa khana with zero kitchen drama.',
-      tagline: 'Ghar jaisa khana with zero kitchen drama. Delivering healthy, nutritious ready-to-eat and processed home-style meals.',
+      tagline: 'Ghar jaisa khana with zero kitchen drama.',
       initial: 'P',
       accent: 'yellow'
     },
@@ -154,10 +127,7 @@
       n: 10,
       name: 'NxtQube',
       subSector: 'Agentic Drones',
-      stage: 'Seed Stage',
-      capital: '₹3 Cr',
-      headline: 'Autonomous Agentic Drones for Precision Agriculture',
-      tagline: 'Next-generation intelligent drone automation delivering autonomous crop scouting, multispectral imaging, and targeted field spraying.',
+      tagline: '',
       initial: 'N',
       accent: 'purple'
     },
@@ -166,10 +136,7 @@
       n: 11,
       name: 'SP Agro',
       subSector: 'Farm Mechanisation',
-      stage: 'Early Stage',
-      capital: '₹3 Cr',
-      headline: 'High-Efficiency Agricultural Machinery & Implements',
-      tagline: 'Manufacturing heavy-duty, cost-efficient agricultural equipment and mechanized harvesters tailored for Indian soil conditions.',
+      tagline: '',
       initial: 'S',
       accent: 'green'
     },
@@ -178,10 +145,7 @@
       n: 12,
       name: 'Borse Automotive',
       subSector: 'Agri Robotics',
-      stage: 'Seed Stage',
-      capital: '₹4 Cr',
-      headline: 'Intelligent Agricultural Robotics & Autonomous Vehicles',
-      tagline: 'Pioneering electric farm utility vehicles and smart robotic automation for weeding, spraying, and high-precision farm chores.',
+      tagline: '',
       initial: 'B',
       accent: 'purple'
     }
@@ -1603,12 +1567,8 @@
           <span class="booth-tag">Booth ${s.n}</span>
           <strong style="font-size:15px;color:var(--ink)">${s.name}</strong>
         </div>
-        <div style="font-size:11.5px;color:#64748b;margin-top:2px;display:flex;gap:6px;align-items:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-          <span style="color:#0284c7;font-weight:600">${s.subSector}</span>
-          <span>•</span>
-          <span>${s.capital}</span>
-          <span>•</span>
-          <span>${s.stage}</span>
+        <div style="font-size:12px;color:#0284c7;font-weight:600;margin-top:2px">
+          ${s.subSector}
         </div>
       </span>
       <span class="choice-pill ${color}">
@@ -1761,8 +1721,7 @@
             </span>
           </div>
           <h2 class="shc-title">${s.name}</h2>
-          <div class="shc-headline">${s.headline}</div>
-          <p class="shc-tagline">${s.tagline}</p>
+          ${s.tagline ? `<p class="shc-tagline" style="margin-top:6px">${s.tagline}</p>` : ''}
         </div>
       </div>
 
@@ -1771,24 +1730,10 @@
         ${renderScenicIllustration(s)}
         <div class="shc-metrics">
           <div class="shc-metric-chip">
-            <span class="shc-metric-icon">🍃</span>
+            <span class="shc-metric-icon">🌱</span>
             <div class="shc-metric-text">
               <strong title="${s.subSector}">${s.subSector}</strong>
               <span>Sub-Sector</span>
-            </div>
-          </div>
-          <div class="shc-metric-chip">
-            <span class="shc-metric-icon">🪙</span>
-            <div class="shc-metric-text">
-              <strong>${s.capital}</strong>
-              <span>Capital</span>
-            </div>
-          </div>
-          <div class="shc-metric-chip">
-            <span class="shc-metric-icon">📊</span>
-            <div class="shc-metric-text">
-              <strong>${s.stage}</strong>
-              <span>Stage</span>
             </div>
           </div>
         </div>
@@ -2029,7 +1974,7 @@
               <span class="reorder-booth-badge">Booth ${s.n}</span>
               <div class="reorder-item-main">
                 <div class="reorder-item-title">${s.name}</div>
-                <div class="reorder-item-sub">${s.subSector} • ${s.stage} • ${s.capital}</div>
+                <div class="reorder-item-sub">${s.subSector}</div>
               </div>
               <div class="reorder-actions">
                 <button class="btn-order-move" data-action="order-move-up" data-index="${idx}" title="Move Up" ${idx === 0 ? 'disabled' : ''}>▲</button>
@@ -2411,7 +2356,7 @@
                       <span class="booth-tag">Booth ${s.n}</span>
                       <div>
                         <strong style="font-size:14px;color:#0f172a;display:block">${s.name}</strong>
-                        <div style="font-size:11.5px;color:#64748b;font-weight:550">${s.subSector} • ${s.stage}</div>
+                        <div style="font-size:11.5px;color:#64748b;font-weight:550">${s.subSector}</div>
                       </div>
                     </div>
                   </td>
