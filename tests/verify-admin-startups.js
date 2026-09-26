@@ -89,4 +89,19 @@ if (!content.includes('function responseIcon(value) {\n    return \'\';\n  }')) 
 }
 console.log('✓ responseIcon returns empty string (no emojis in pills or confirm boxes)');
 
+// 7. Verify My Responses filter button label is Not my area of interest
+if (!content.includes('Not my area of interest (${notInterestedList.length})')) {
+  console.error('FAIL: My Responses filter button not updated to Not my area of interest (${notInterestedList.length})');
+  process.exit(1);
+}
+console.log('✓ My Responses filter button is updated to Not my area of interest');
+
+// 8. Verify styles.css does not restrict choice-pill with small max-width
+const stylesCss = fs.readFileSync('styles.css', 'utf8');
+if (stylesCss.includes('max-width:85px') || stylesCss.includes('max-width:95px')) {
+  console.error('FAIL: styles.css still contains restrictive max-width (85px/95px) on choice-pill!');
+  process.exit(1);
+}
+console.log('✓ styles.css choice-pill has no restrictive max-width overflow bottlenecks');
+
 console.log('\n🎉 ALL ADMIN & STARTUP PROFILE CHECKS PASSED PERFECTLY!');

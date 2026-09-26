@@ -53,8 +53,9 @@ button{cursor:pointer;border:0;touch-action:manipulation}
 .progress-label{font-weight:850;font-size:18px}
 .live-pill{background:#eefaf3;color:#16824e;border-radius:999px;padding:6px 10px;font-size:10.5px;font-weight:850}
 .dots{display:none !important}
-.filters{display:flex;gap:8px;overflow-x:auto;padding-bottom:5px;margin:10px 0;-webkit-overflow-scrolling:touch}
-.chip{white-space:nowrap;border-radius:999px;padding:8px 12px;background:#f4f6fb;color:#64708b;font-size:12px;font-weight:750;touch-action:manipulation}
+.filters{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin:10px 0;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.chip{white-space:nowrap;border-radius:999px;padding:8px 14px;background:#f4f6fb;color:#64708b;font-size:12px;font-weight:750;touch-action:manipulation;flex-shrink:0;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center}
 .chip.active{background:#2a64f6;color:#fff}
 .startup-list{display:flex;flex-direction:column;gap:10px;padding-bottom:max(48px,calc(24px + var(--safe-bottom,24px)))}
 .startup-card{border:1px solid var(--line);border-radius:18px;background:#fff;padding:12px;display:grid;grid-template-columns:36px 40px minmax(0,1fr) auto;gap:10px;align-items:center;box-shadow:0 4px 18px rgba(30,42,70,.04);transition:.15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;text-align:left}
@@ -70,7 +71,7 @@ button{cursor:pointer;border:0;touch-action:manipulation}
 .startup-main span{display:block;color:#6d7893;font-size:10px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tags{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap}
 .tag{padding:3px 6px;border-radius:6px;background:#f3f5f8;color:#6b758a;font-size:8.5px;font-weight:750}
-.choice-pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:6px 11px;font-size:10.5px;font-weight:850;max-width:120px;justify-content:center;white-space:nowrap;flex-shrink:0}
+.choice-pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:6px 12px;font-size:11px;font-weight:850;max-width:none;width:auto;justify-content:center;white-space:nowrap;flex-shrink:0;box-sizing:border-box}
 .choice-pill.green{background:#047857;color:#ffffff;border:1px solid #065f46;box-shadow:0 1px 3px rgba(4,120,87,0.2)}
 .choice-pill.yellow{background:#b45309;color:#ffffff;border:1px solid #92400e;box-shadow:0 1px 3px rgba(180,83,9,0.2)}
 .choice-pill.blue{background:#1d4ed8;color:#ffffff;border:1px solid #1e40af;box-shadow:0 1px 3px rgba(29,78,216,0.2)}
@@ -166,7 +167,8 @@ button{cursor:pointer;border:0;touch-action:manipulation}
 .back-btn{background:#f4f6fb;width:36px;height:36px;border-radius:11px;display:grid;place-items:center;font-size:18px;font-weight:800;color:#475569;min-height:36px;touch-action:manipulation}
 .detail-label{font-size:11px;color:#7a859d;font-weight:800}
 .my-responses{display:flex;flex-direction:column;gap:10px;padding-bottom:max(40px,calc(20px + var(--safe-bottom, 20px)))}
-.my-response-row{display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:16px;background:#fff;border:1px solid var(--line)}
+.my-response-row{display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:16px;background:#fff;border:1px solid var(--line);gap:10px}
+.my-response-row .choice-pill{flex-shrink:0 !important;max-width:none !important;width:auto !important;font-size:10.5px !important;padding:5px 12px !important}
 
 /* ── ISOLATE INVESTOR EXPERIENCE (ZERO OTHER BUTTONS OR SIDEBARS) ── */
 body.route-investor {
@@ -298,7 +300,7 @@ body.route-stage .desktop-main {
   .stage-metrics{grid-template-columns:1fr}
   .startup-card{grid-template-columns:32px 38px minmax(0,1fr) auto !important;gap:9px !important;padding:11px !important}
   .startup-card .chevron{display:none !important}
-  .startup-card .choice-pill{display:inline-flex !important;font-size:9.5px !important;padding:5px 8px !important;max-width:95px !important}
+  .startup-card .choice-pill{display:inline-flex !important;font-size:9.5px !important;padding:5px 9px !important;max-width:none !important;width:auto !important}
   .startup-main strong{font-size:13.5px !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important}
   .startup-main span{font-size:10px !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important}
   .tags .tag:nth-child(n+3){display:none !important}
@@ -325,7 +327,8 @@ body.route-stage .desktop-main {
   .startup-card{padding:9px 10px;border-radius:15px;gap:7px;grid-template-columns:28px 34px minmax(0,1fr) auto !important}
   .rank{width:28px;height:28px;font-size:11px;border-radius:8px}
   .logo{width:34px;height:34px;border-radius:10px;font-size:13px}
-  .choice-pill{font-size:8.5px !important;padding:4px 6px !important;max-width:85px !important}
+  .choice-pill{font-size:8.5px !important;padding:4px 8px !important;max-width:none !important;width:auto !important}
+  .filters .chip{font-size:11px !important;padding:6px 10px !important}
   .tags{display:none !important}
 }
 

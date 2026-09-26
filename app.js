@@ -1846,9 +1846,9 @@
     const rows = displayList.map(s => {
       const r = responseFor(s.id);
       return `<div class="my-response-row" data-startup="${s.id}" style="cursor:pointer" title="Click to view details or update response">
-        <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1">
           <span class="booth-tag">Booth ${s.n}</span>
-          <div style="min-width:0">
+          <div style="min-width:0;flex:1">
             <strong style="font-size:14px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name}</strong>
             <div class="detail-label" style="font-size:11px">${new Date(r.recordedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • Tap to edit</div>
           </div>
@@ -1868,7 +1868,7 @@
         <button class="chip ${myResponseFilter === 'all' ? 'active' : ''}" data-resp-filter="all">All (${allAnswered.length})</button>
         <button class="chip chip-interested ${myResponseFilter === 'INTERESTED' ? 'active' : ''}" data-resp-filter="INTERESTED">Interested (${interestedList.length})</button>
         <button class="chip chip-explore ${myResponseFilter === 'EXPLORE' ? 'active' : ''}" data-resp-filter="EXPLORE">Explore More (${exploreList.length})</button>
-        <button class="chip chip-not-interested ${myResponseFilter === 'NOT_INTERESTED' ? 'active' : ''}" data-resp-filter="NOT_INTERESTED">Not My Area (${notInterestedList.length})</button>
+        <button class="chip chip-not-interested ${myResponseFilter === 'NOT_INTERESTED' ? 'active' : ''}" data-resp-filter="NOT_INTERESTED">Not my area of interest (${notInterestedList.length})</button>
       </div>
       <div class="my-responses" style="display:flex;flex-direction:column;gap:8px">
         ${rows || `<div class="notice">No responses found for this filter.</div>`}
