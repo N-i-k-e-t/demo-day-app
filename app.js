@@ -354,7 +354,7 @@
   }
 
   function responseIcon(value) {
-    return value === RESPONSE.INTERESTED ? '👍' : value === RESPONSE.EXPLORE ? '?' : value === RESPONSE.NOT_INTERESTED ? '👎' : '';
+    return '';
   }
 
   function generateSecureToken() {
@@ -1768,19 +1768,25 @@
 
       <div class="response-stack">
         <button class="response-btn green ${pendingChoice === 'INTERESTED' ? 'selected' : ''}" data-select-response="INTERESTED">
-          <span class="response-icon">👍</span>
-          <span><strong>I am interested</strong><span>Request founder introduction & follow-up.</span></span>
-          ${pendingChoice === 'INTERESTED' ? '<span class="selected-indicator"><span>✓ Selected</span></span>' : '<span style="margin-left:auto;color:#8fa0bb">›</span>'}
+          <div class="response-btn-main">
+            <strong>I am interested</strong>
+            <span class="response-btn-desc">Request founder introduction & follow-up.</span>
+          </div>
+          ${pendingChoice === 'INTERESTED' ? '<span class="selected-indicator"><span>✓ Selected</span></span>' : '<span class="response-arrow">›</span>'}
         </button>
         <button class="response-btn yellow ${pendingChoice === 'EXPLORE' ? 'selected' : ''}" data-select-response="EXPLORE">
-          <span class="response-icon">?</span>
-          <span><strong>Would like to explore more</strong><span>Have questions or want deeper diligence info.</span></span>
-          ${pendingChoice === 'EXPLORE' ? '<span class="selected-indicator"><span>✓ Selected</span></span>' : '<span style="margin-left:auto;color:#8fa0bb">›</span>'}
+          <div class="response-btn-main">
+            <strong>Would like to explore more</strong>
+            <span class="response-btn-desc">Have questions or want deeper diligence info.</span>
+          </div>
+          ${pendingChoice === 'EXPLORE' ? '<span class="selected-indicator"><span>✓ Selected</span></span>' : '<span class="response-arrow">›</span>'}
         </button>
         <button class="response-btn blue ${pendingChoice === 'NOT_INTERESTED' ? 'selected' : ''}" data-select-response="NOT_INTERESTED">
-          <span class="response-icon">👎</span>
-          <span><strong>Not my area of interest</strong><span>Not a fit for our current investment mandate.</span></span>
-          ${pendingChoice === 'NOT_INTERESTED' ? '<span class="selected-indicator"><span>✓ Selected</span></span>' : '<span style="margin-left:auto;color:#8fa0bb">›</span>'}
+          <div class="response-btn-main">
+            <strong>Not my area of interest</strong>
+            <span class="response-btn-desc">Not a fit for our current investment mandate.</span>
+          </div>
+          ${pendingChoice === 'NOT_INTERESTED' ? '<span class="selected-indicator"><span>✓ Selected</span></span>' : '<span class="response-arrow">›</span>'}
         </button>
       </div>
 
@@ -1791,7 +1797,6 @@
             <span style="font-size:11px;color:#94a3b8">Prevents accidental taps</span>
           </div>
           <div class="confirm-choice-label ${COLORS[pendingChoice]}">
-            <span>${responseIcon(pendingChoice)}</span>
             <span>${responseLabel(pendingChoice)}</span>
           </div>
           <p class="confirm-desc">${isEdit ? `Are you sure you want to update your response for <strong>${s.name}</strong> to <strong>${responseLabel(pendingChoice)}</strong>? This will update across both your devices.` : `Are you sure you want to submit this response for <strong>${s.name}</strong>? Once confirmed, this response will sync to all your devices.`}</p>
@@ -1822,7 +1827,6 @@
       </div>
       <button class="primary-cta" data-action="back-list">Back to Startup List →</button>
       <button class="btn-change-choice" data-action="change-vote" style="margin-top:10px;background:rgba(255,255,255,0.9);border:1px solid #cbd5e1;color:#475569;padding:11px 16px;border-radius:12px;font-size:13px;font-weight:650;width:100%;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
-        <span>✏️</span>
         <span>Change / Update Your Response</span>
       </button>
     </main>${renderBottomNav('startups')}`;
@@ -1850,7 +1854,6 @@
           </div>
         </div>
         <span class="choice-pill ${COLORS[r.response]}">
-          <span class="choice-icon">${responseIcon(r.response)}</span>
           ${responseLabel(r.response)}
         </span>
       </div>`;
@@ -1863,9 +1866,9 @@
       </div>
       <div class="filters" style="margin:8px 0 14px">
         <button class="chip ${myResponseFilter === 'all' ? 'active' : ''}" data-resp-filter="all">All (${allAnswered.length})</button>
-        <button class="chip chip-interested ${myResponseFilter === 'INTERESTED' ? 'active' : ''}" data-resp-filter="INTERESTED">👍 Interested (${interestedList.length})</button>
-        <button class="chip chip-explore ${myResponseFilter === 'EXPLORE' ? 'active' : ''}" data-resp-filter="EXPLORE">? Explore More (${exploreList.length})</button>
-        <button class="chip chip-not-interested ${myResponseFilter === 'NOT_INTERESTED' ? 'active' : ''}" data-resp-filter="NOT_INTERESTED">👎 Not My Area (${notInterestedList.length})</button>
+        <button class="chip chip-interested ${myResponseFilter === 'INTERESTED' ? 'active' : ''}" data-resp-filter="INTERESTED">Interested (${interestedList.length})</button>
+        <button class="chip chip-explore ${myResponseFilter === 'EXPLORE' ? 'active' : ''}" data-resp-filter="EXPLORE">Explore More (${exploreList.length})</button>
+        <button class="chip chip-not-interested ${myResponseFilter === 'NOT_INTERESTED' ? 'active' : ''}" data-resp-filter="NOT_INTERESTED">Not My Area (${notInterestedList.length})</button>
       </div>
       <div class="my-responses" style="display:flex;flex-direction:column;gap:8px">
         ${rows || `<div class="notice">No responses found for this filter.</div>`}
@@ -1884,7 +1887,7 @@
         <span class="nav-label">Startups</span>
       </button>
       <button data-nav="responses" class="${active === 'responses' ? 'active' : ''}">
-        <span class="nav-icon">📊</span>
+        <span class="nav-icon">▤</span>
         <span class="nav-label">My Responses</span>
       </button>
     </nav>`;
@@ -1959,7 +1962,7 @@
           </div>
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <button class="admin-btn dark" data-action="broadcast-order" style="font-weight:850;padding:8px 16px;font-size:12px;background:#0f172a;color:#ffffff;display:inline-flex;align-items:center;gap:6px">
-              <span>📡</span> Broadcast New Order
+              Broadcast New Order
             </button>
             <button class="admin-btn neutral" data-action="reset-order" style="font-size:11.5px;padding:8px 14px">
               ↺ Reset Default
@@ -2266,22 +2269,22 @@
           <p class="detail-label" style="margin-bottom:16px">Control stage featured startup and publish live aggregated sentiment to audience screens.</p>
           
           <div class="admin-btns">
-            <button class="admin-btn blue" data-admin="start">▶ Start Event</button>
-            <button class="admin-btn yellow" data-admin="next">⏭ Next Booth (${Math.min(TOTAL_PITCHES, state.pitch + 1)})</button>
-            <button class="admin-btn green" data-admin="prepare">🎯 Prepare Stage</button>
-            <button class="admin-btn dark" data-admin="publish">📡 Publish to Stage</button>
-            <button class="admin-btn red" data-admin="complete">🏁 Complete Event</button>
-            <button class="admin-btn neutral" data-admin="reset">↺ Reset Demo</button>
+            <button class="admin-btn blue" data-admin="start">Start Event</button>
+            <button class="admin-btn yellow" data-admin="next">Next Booth (${Math.min(TOTAL_PITCHES, state.pitch + 1)})</button>
+            <button class="admin-btn green" data-admin="prepare">Prepare Stage</button>
+            <button class="admin-btn dark" data-admin="publish">Publish to Stage</button>
+            <button class="admin-btn red" data-admin="complete">Complete Event</button>
+            <button class="admin-btn neutral" data-admin="reset">Reset Demo</button>
           </div>
 
           <div style="margin-top:20px;padding:16px 20px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px">
             <h4 style="margin:0 0 10px;font-size:13px;font-weight:850;color:var(--ink)">Real-Time Data Backups & Reset</h4>
             <div class="admin-btns">
-              <button class="admin-btn green" data-action="export-csv">📥 Export All Votes (CSV)</button>
-              <button class="admin-btn blue" data-action="export-json">💾 Download Event Backup (JSON)</button>
-              <button class="admin-btn neutral" data-admin="refresh-data">🔄 Force Cloud Sync</button>
+              <button class="admin-btn green" data-action="export-csv">Export All Votes (CSV)</button>
+              <button class="admin-btn blue" data-action="export-json">Download Event Backup (JSON)</button>
+              <button class="admin-btn neutral" data-admin="refresh-data">Force Cloud Sync</button>
               <button class="admin-btn red" data-action="reset-session" style="font-weight:850">
-                🔄 Reset & Start New Session (Auto-CSV)
+                Reset & Start New Session (Auto-CSV)
               </button>
             </div>
           </div>
@@ -2394,10 +2397,10 @@
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <div class="roster-tabs">
               <button class="roster-tab-btn ${adminRosterFilter === 'all' ? 'active' : ''}" data-roster-filter="all">All (${totalInvestors})</button>
-              <button class="roster-tab-btn ${adminRosterFilter === 'online' ? 'active' : ''}" data-roster-filter="online">🟢 Online Now (${onlineNowCount})</button>
-              <button class="roster-tab-btn ${adminRosterFilter === 'complete' ? 'active' : ''}" data-roster-filter="complete">✅ All 12 Done (${allDoneInvestorsCount})</button>
-              <button class="roster-tab-btn ${adminRosterFilter === 'progress' ? 'active' : ''}" data-roster-filter="progress">⚡ In Progress (${inProgressInvestorsCount})</button>
-              <button class="roster-tab-btn ${adminRosterFilter === 'unvoted' ? 'active' : ''}" data-roster-filter="unvoted">⏳ No Responses (${noResponseInvestorsCount})</button>
+              <button class="roster-tab-btn ${adminRosterFilter === 'online' ? 'active' : ''}" data-roster-filter="online">Online Now (${onlineNowCount})</button>
+              <button class="roster-tab-btn ${adminRosterFilter === 'complete' ? 'active' : ''}" data-roster-filter="complete">All 12 Done (${allDoneInvestorsCount})</button>
+              <button class="roster-tab-btn ${adminRosterFilter === 'progress' ? 'active' : ''}" data-roster-filter="progress">In Progress (${inProgressInvestorsCount})</button>
+              <button class="roster-tab-btn ${adminRosterFilter === 'unvoted' ? 'active' : ''}" data-roster-filter="unvoted">No Responses (${noResponseInvestorsCount})</button>
             </div>
             <button class="admin-btn neutral" data-admin="refresh-data" style="font-size:11.5px;padding:7px 14px">↻ Refresh Cloud Data</button>
           </div>
@@ -2544,35 +2547,35 @@
           <div class="link-gen-row">
             <span class="link-gen-title">📱 <strong>Investor Hub App</strong></span>
             <input id="admin-link-investor" class="link-gen-url" value="${investorURL}" readonly>
-            <button class="btn-copy-link" data-copy-link="admin-link-investor">📋 Copy Link</button>
+            <button class="btn-copy-link" data-copy-link="admin-link-investor">Copy Link</button>
             <a href="${investorURL}" target="_blank" class="btn-open-link" style="text-decoration:none">Open App ↗</a>
           </div>
 
           <div class="link-gen-row">
             <span class="link-gen-title">📺 <strong>Main Stage Display</strong></span>
             <input id="admin-link-stage" class="link-gen-url" value="${stageURL}" readonly>
-            <button class="btn-copy-link" data-copy-link="admin-link-stage">📋 Copy Link</button>
+            <button class="btn-copy-link" data-copy-link="admin-link-stage">Copy Link</button>
             <button class="btn-open-link" data-route="stage">Open Stage →</button>
           </div>
 
           <div class="link-gen-row">
             <span class="link-gen-title">🔒 <strong>Organiser Command Center</strong></span>
             <input id="admin-link-admin" class="link-gen-url" value="${adminURL}" readonly>
-            <button class="btn-copy-link" data-copy-link="admin-link-admin">📋 Copy Link</button>
+            <button class="btn-copy-link" data-copy-link="admin-link-admin">Copy Link</button>
             <button class="btn-open-link" data-route="admin">Active View ✓</button>
           </div>
 
           <div class="link-gen-row">
             <span class="link-gen-title">🏛️ <strong>Public Organisation Landing Page</strong></span>
             <input id="admin-link-org" class="link-gen-url" value="${baseURL}#org" readonly>
-            <button class="btn-copy-link" data-copy-link="admin-link-org">📋 Copy Link</button>
+            <button class="btn-copy-link" data-copy-link="admin-link-org">Copy Link</button>
             <button class="btn-open-link" data-route="org">Open Landing →</button>
           </div>
 
           <div class="link-gen-row">
             <span class="link-gen-title">🎨 <strong>UI Design Reference Screens</strong></span>
             <input id="admin-link-refs" class="link-gen-url" value="${baseURL}#references" readonly>
-            <button class="btn-copy-link" data-copy-link="admin-link-refs">📋 Copy Link</button>
+            <button class="btn-copy-link" data-copy-link="admin-link-refs">Copy Link</button>
             <button class="btn-open-link" data-route="references">View Screens →</button>
           </div>
         </div>
@@ -2701,7 +2704,7 @@
             Hosted by <strong>${orgState.name || 'Asian Founders Fund (AFF)'}</strong>. 12 venture-backed tech startups pitching live to accredited investors and syndicate partners.
           </p>
           <div class="org-actions-row">
-            <button class="btn-org-secondary" data-action="org-admin-login">🔒 Organiser Admin Access</button>
+            <button class="btn-org-secondary" data-action="org-admin-login">Organiser Admin Access</button>
             <a href="tel:+917350868084" class="btn-org-primary" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none">📞 Contact: +91 7350868084</a>
           </div>
         </section>

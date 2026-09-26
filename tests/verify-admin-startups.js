@@ -75,4 +75,18 @@ if (!content.includes('Not my area of interest (👎)')) {
 }
 console.log('✓ Tooltip in Admin Roster is updated to Not my area of interest (👎)');
 
+// 5. Verify emojis removed from response buttons
+if (content.includes('<span class="response-icon">👍</span>') || content.includes('<span class="response-icon">👎</span>')) {
+  console.error('FAIL: Emojis still present in response-btn!');
+  process.exit(1);
+}
+console.log('✓ Emojis cleanly removed from startup profile response buttons');
+
+// 6. Verify responseIcon returns empty string (no emojis in pills/modals)
+if (!content.includes('function responseIcon(value) {\n    return \'\';\n  }')) {
+  console.error('FAIL: responseIcon should return empty string');
+  process.exit(1);
+}
+console.log('✓ responseIcon returns empty string (no emojis in pills or confirm boxes)');
+
 console.log('\n🎉 ALL ADMIN & STARTUP PROFILE CHECKS PASSED PERFECTLY!');
