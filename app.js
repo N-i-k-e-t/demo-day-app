@@ -1744,16 +1744,6 @@
           <div class="shc-headline">${s.headline}</div>
           <p class="shc-tagline">${s.tagline}</p>
         </div>
-        <div class="shc-logo-box" title="${s.name} Logo">
-          <div class="shc-logo-icon">
-            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="4" ry="4"></rect>
-              <circle cx="8.5" cy="8.5" r="1.5"></circle>
-              <polyline points="21 15 16 10 5 21"></polyline>
-            </svg>
-          </div>
-          <span class="shc-logo-text">Add Startup<br>Logo</span>
-        </div>
       </div>
 
       <div class="shc-banner">
