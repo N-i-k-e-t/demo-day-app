@@ -1715,6 +1715,137 @@ body.route-references .desktop-main {
   }
 }
 
+/* ══════════════════════════════════════════════════════════════
+   ADMIN STARTUP REORDER & DRAG-AND-DROP PANEL
+   ══════════════════════════════════════════════════════════════ */
+.startup-reorder-panel {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  margin-top: 22px;
+}
 
+.reorder-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 16px 0;
+}
 
+.reorder-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 10px 14px;
+  transition: all 0.18s ease;
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: grab;
+}
 
+.reorder-item:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.reorder-item.dragging {
+  opacity: 0.4;
+  background: #e0e7ff;
+  border-color: #6366f1;
+  cursor: grabbing;
+}
+
+.reorder-item.drag-over {
+  border-top: 3px solid #2563eb;
+  transform: translateY(-2px);
+}
+
+.drag-handle {
+  font-size: 20px;
+  color: #94a3b8;
+  cursor: grab;
+  padding: 2px 6px;
+  line-height: 1;
+}
+
+.drag-handle:hover {
+  color: #334155;
+}
+
+.reorder-booth-badge {
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 850;
+  padding: 4px 10px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  min-width: 64px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.22);
+}
+
+.reorder-item-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.reorder-item-title {
+  font-size: 14.5px;
+  font-weight: 850;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reorder-item-sub {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 550;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reorder-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-order-move {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 9px;
+  color: #334155;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-order-move:hover:not(:disabled) {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.btn-order-move:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+  background: #f1f5f9;
+}

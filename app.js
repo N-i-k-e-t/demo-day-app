@@ -33,82 +33,12 @@
   const RESPONSE = { INTERESTED: 'INTERESTED', EXPLORE: 'EXPLORE', NOT_INTERESTED: 'NOT_INTERESTED' };
   const COLORS = { INTERESTED: 'green', EXPLORE: 'yellow', NOT_INTERESTED: 'blue' };
 
-  const startups = [
-    {
-      id: 's01',
-      n: 1,
-      name: 'Mecco',
-      subSector: 'Farm Mechanisation',
-      stage: 'Early Stage',
-      capital: '₹3 Cr',
-      headline: 'Advanced Farm Mechanisation & Modern Agri Equipment',
-      tagline: 'Empowering farmers with high-efficiency mechanised equipment and smart agricultural tools to multiply harvest yield.',
-      initial: 'M',
-      accent: 'green'
-    },
-    {
-      id: 's02',
-      n: 2,
-      name: 'Neoperk',
-      subSector: 'Soil & Precision Agriculture',
-      stage: 'Seed Stage',
-      capital: '₹2 Cr',
-      headline: 'Real-Time Soil Health Diagnostics & Precision Insights',
-      tagline: 'Instant portable soil testing and data-driven crop advisory empowering growers to optimize fertilizer usage and crop yields.',
-      initial: 'N',
-      accent: 'blue'
-    },
-    {
-      id: 's03',
-      n: 3,
-      name: 'EarthSaathi',
-      subSector: 'Clean Energy - Climate Tech',
-      stage: 'Early Stage',
-      capital: '₹4 Cr',
-      headline: 'Decarbonizing Agriculture with Clean Energy Climate Tech',
-      tagline: 'Pioneering renewable energy innovations and climate-resilient sustainability solutions for rural enterprises and farming.',
-      initial: 'E',
-      accent: 'green'
-    },
-    {
-      id: 's04',
-      n: 4,
-      name: 'Poshaqq',
-      subSector: 'Food Processing',
-      stage: 'Growth Stage',
-      capital: '₹2.5 Cr',
-      headline: 'Ghar jaisa khana with zero kitchen drama.',
-      tagline: 'Ghar jaisa khana with zero kitchen drama. Delivering healthy, nutritious ready-to-eat and processed home-style meals.',
-      initial: 'P',
-      accent: 'yellow'
-    },
-    {
-      id: 's05',
-      n: 5,
-      name: 'Deccan Pack',
-      subSector: 'Packaging',
-      stage: 'Early Stage',
-      capital: '₹3.5 Cr',
-      headline: 'Sustainable & High-Durability Agro Packaging Systems',
-      tagline: 'Next-generation eco-friendly packaging designed to preserve freshness, extend shelf-life, and cut farm-to-retail transit loss.',
-      initial: 'D',
-      accent: 'blue'
-    },
-    {
-      id: 's06',
-      n: 6,
-      name: 'WhatsLoan',
-      subSector: 'Agri-Fintech',
-      stage: 'Early Stage',
-      capital: '₹5 Cr',
-      headline: 'Bringing banks closer to farmers with agri-loan marketplace.',
-      tagline: 'We bring banks to the farmers with agri loan market place and digital financial identity to empower farmers.',
-      initial: 'W',
-      accent: 'blue'
-    },
+  const ORDER_STORAGE_KEY = 'startup-demo-order-v2';
+
+  const STARTUPS_MASTER = [
     {
       id: 's07',
-      n: 7,
+      n: 1,
       name: 'Shraddha Farms',
       subSector: 'Dairy',
       stage: 'Growth Stage',
@@ -119,8 +49,20 @@
       accent: 'blue'
     },
     {
+      id: 's01',
+      n: 2,
+      name: 'Mecco',
+      subSector: 'Farm Mechanisation',
+      stage: 'Early Stage',
+      capital: '₹3 Cr',
+      headline: 'Advanced Farm Mechanisation & Modern Agri Equipment',
+      tagline: 'Empowering farmers with high-efficiency mechanised equipment and smart agricultural tools to multiply harvest yield.',
+      initial: 'M',
+      accent: 'green'
+    },
+    {
       id: 's08',
-      n: 8,
+      n: 3,
       name: 'Kumbhargaon Agro',
       subSector: 'FPO',
       stage: 'Growth Stage',
@@ -131,20 +73,32 @@
       accent: 'green'
     },
     {
-      id: 's09',
-      n: 9,
-      name: 'NxtQube',
-      subSector: 'Agentic Drones',
+      id: 's02',
+      n: 4,
+      name: 'Neoperk',
+      subSector: 'Soil & Precision Agriculture',
       stage: 'Seed Stage',
-      capital: '₹3 Cr',
-      headline: 'Autonomous Agentic Drones for Precision Agriculture',
-      tagline: 'Next-generation intelligent drone automation delivering autonomous crop scouting, multispectral imaging, and targeted field spraying.',
+      capital: '₹2 Cr',
+      headline: 'Real-Time Soil Health Diagnostics & Precision Insights',
+      tagline: 'Instant portable soil testing and data-driven crop advisory empowering growers to optimize fertilizer usage and crop yields.',
       initial: 'N',
-      accent: 'purple'
+      accent: 'blue'
+    },
+    {
+      id: 's06',
+      n: 5,
+      name: 'WhatsLoan',
+      subSector: 'Agri-Fintech',
+      stage: 'Early Stage',
+      capital: '₹5 Cr',
+      headline: 'Bringing banks closer to farmers with agri-loan marketplace.',
+      tagline: 'We bring banks to the farmers with agri loan market place and digital financial identity to empower farmers.',
+      initial: 'W',
+      accent: 'blue'
     },
     {
       id: 's10',
-      n: 10,
+      n: 6,
       name: 'GAON NASP',
       subSector: 'Rural Operating System',
       stage: 'Early Stage',
@@ -153,6 +107,54 @@
       tagline: 'Comprehensive rural operating system connecting grassroots communities to digital banking, logistics, and government services.',
       initial: 'G',
       accent: 'yellow'
+    },
+    {
+      id: 's03',
+      n: 7,
+      name: 'EarthSaathi',
+      subSector: 'Clean Energy - Climate Tech',
+      stage: 'Early Stage',
+      capital: '₹4 Cr',
+      headline: 'Decarbonizing Agriculture with Clean Energy Climate Tech',
+      tagline: 'Pioneering renewable energy innovations and climate-resilient sustainability solutions for rural enterprises and farming.',
+      initial: 'E',
+      accent: 'green'
+    },
+    {
+      id: 's05',
+      n: 8,
+      name: 'Deccan Pack',
+      subSector: 'Packaging',
+      stage: 'Early Stage',
+      capital: '₹3.5 Cr',
+      headline: 'Sustainable & High-Durability Agro Packaging Systems',
+      tagline: 'Next-generation eco-friendly packaging designed to preserve freshness, extend shelf-life, and cut farm-to-retail transit loss.',
+      initial: 'D',
+      accent: 'blue'
+    },
+    {
+      id: 's04',
+      n: 9,
+      name: 'Poshaqq',
+      subSector: 'Food Processing',
+      stage: 'Growth Stage',
+      capital: '₹2.5 Cr',
+      headline: 'Ghar jaisa khana with zero kitchen drama.',
+      tagline: 'Ghar jaisa khana with zero kitchen drama. Delivering healthy, nutritious ready-to-eat and processed home-style meals.',
+      initial: 'P',
+      accent: 'yellow'
+    },
+    {
+      id: 's09',
+      n: 10,
+      name: 'NxtQube',
+      subSector: 'Agentic Drones',
+      stage: 'Seed Stage',
+      capital: '₹3 Cr',
+      headline: 'Autonomous Agentic Drones for Precision Agriculture',
+      tagline: 'Next-generation intelligent drone automation delivering autonomous crop scouting, multispectral imaging, and targeted field spraying.',
+      initial: 'N',
+      accent: 'purple'
     },
     {
       id: 's11',
@@ -179,6 +181,42 @@
       accent: 'purple'
     }
   ];
+
+  function loadStartupOrder() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(ORDER_STORAGE_KEY));
+      if (Array.isArray(saved) && saved.length > 0) return saved;
+    } catch (_) {}
+    return null;
+  }
+
+  function applyStartupOrder(orderIds, shouldSave = true) {
+    if (!Array.isArray(orderIds) || orderIds.length === 0) return;
+    const map = new Map(STARTUPS_MASTER.map(s => [s.id, { ...s }]));
+    const ordered = [];
+    orderIds.forEach(id => {
+      if (map.has(id)) {
+        ordered.push(map.get(id));
+        map.delete(id);
+      }
+    });
+    map.forEach(s => ordered.push(s));
+    ordered.forEach((s, idx) => {
+      s.n = idx + 1;
+    });
+    startups = ordered;
+    if (shouldSave) {
+      try {
+        localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(orderIds));
+      } catch (_) {}
+    }
+  }
+
+  let startups = STARTUPS_MASTER.map((s, idx) => ({ ...s, n: idx + 1 }));
+  const initialSavedOrder = loadStartupOrder();
+  if (initialSavedOrder) {
+    applyStartupOrder(initialSavedOrder, false);
+  }
 
   const refImages = [
     ['01-investor-flow-overview.png', 'Investor flow overview'],
@@ -1205,6 +1243,15 @@
         }
       });
 
+      // Listen to broadcast pitch sequence reorder from admin
+      realtimeChannel.on('broadcast', { event: 'startup_order_sync' }, (msg) => {
+        if (msg?.payload?.order && Array.isArray(msg.payload.order)) {
+          applyStartupOrder(msg.payload.order, true);
+          renderAll();
+          toast('Pitch sequence updated by organizer');
+        }
+      });
+
       // Realtime Postgres Changes: New or updated responses by ANY investor
       realtimeChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'demo_responses' }, (payload) => {
         const row = payload.new || payload.old;
@@ -1356,6 +1403,9 @@
         }
       } else if (event.data.type === 'INVESTOR_VOTE' && event.data.vote) {
         handleIncomingVote(event.data.vote);
+      } else if (event.data.type === 'STARTUP_ORDER_SYNC' && Array.isArray(event.data.order)) {
+        applyStartupOrder(event.data.order, true);
+        renderAll();
       }
     };
   } catch (_) {}
@@ -1944,6 +1994,148 @@
   }
 
   /* ══════════════════════════════════════════════════════════════
+     STARTUP BOOTH ORDER REORDERING & LIVE BROADCAST
+     ══════════════════════════════════════════════════════════════ */
+  function renderStartupReorderPanel() {
+    return `
+      <div class="startup-reorder-panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:12px">
+          <div>
+            <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px">
+              <span>🔢 Startup Booth Order & Sequence</span>
+              <span class="live-stat-chip blue" style="font-size:10.5px;padding:3px 10px;font-weight:800">Live Drag & Drop</span>
+            </h3>
+            <p class="detail-label" style="margin:0">Drag handle ⠿ or use ▲ / ▼ buttons to adjust pitch sequence. Booth 1 to 12 renumbers dynamically in real time.</p>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <button class="admin-btn dark" data-action="broadcast-order" style="font-weight:850;padding:8px 16px;font-size:12px;background:#0f172a;color:#ffffff;display:inline-flex;align-items:center;gap:6px">
+              <span>📡</span> Broadcast New Order
+            </button>
+            <button class="admin-btn neutral" data-action="reset-order" style="font-size:11.5px;padding:8px 14px">
+              ↺ Reset Default
+            </button>
+          </div>
+        </div>
+
+        <div class="reorder-list" id="reorder-startup-list">
+          ${startups.map((s, idx) => `
+            <div class="reorder-item" draggable="true" data-id="${s.id}" data-index="${idx}">
+              <span class="drag-handle" title="Drag to reorder">⠿</span>
+              <span class="reorder-booth-badge">Booth ${s.n}</span>
+              <div class="reorder-item-main">
+                <div class="reorder-item-title">${s.name}</div>
+                <div class="reorder-item-sub">${s.subSector} • ${s.stage} • ${s.capital}</div>
+              </div>
+              <div class="reorder-actions">
+                <button class="btn-order-move" data-action="order-move-up" data-index="${idx}" title="Move Up" ${idx === 0 ? 'disabled' : ''}>▲</button>
+                <button class="btn-order-move" data-action="order-move-down" data-index="${idx}" title="Move Down" ${idx === startups.length - 1 ? 'disabled' : ''}>▼</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="notice" style="margin-top:14px;background:#f0fdf4;border-color:#bbf7d0;color:#166534;font-size:12.5px">
+          <strong>💡 Zero Vote Loss Guarantee:</strong> All investor responses are stored by immutable Startup ID. Adjusting sequence safely updates Booth 1–12 across the Admin, Stage, and all attendee screens.
+        </div>
+      </div>
+    `;
+  }
+
+  function broadcastStartupOrder(newOrderIds) {
+    if (!Array.isArray(newOrderIds) || newOrderIds.length === 0) return;
+    applyStartupOrder(newOrderIds, true);
+
+    // 1. Broadcast via Supabase Realtime channel to all attendee phones
+    if (realtimeChannel) {
+      try {
+        realtimeChannel.send({
+          type: 'broadcast',
+          event: 'startup_order_sync',
+          payload: { order: newOrderIds, timestamp: Date.now() }
+        });
+      } catch (err) {
+        console.warn('[Realtime Broadcast] Order send notice:', err);
+      }
+    }
+
+    // 2. Broadcast via BroadcastChannel to all open tabs locally
+    if (bc) {
+      try {
+        bc.postMessage({ type: 'STARTUP_ORDER_SYNC', order: newOrderIds });
+      } catch (_) {}
+    }
+
+    // 3. Persist action audit to Supabase
+    if (supabase) {
+      supabase.from('demo_admin_actions').insert({
+        action_type: 'PITCH_ORDER_UPDATED',
+        detail: `Pitch sequence updated (${newOrderIds.join(', ')})`,
+        state_snapshot: { order: newOrderIds },
+        created_at: new Date().toISOString()
+      }).then(() => {}).catch(err => console.warn('[Supabase] Save order error:', err));
+    }
+
+    recordFeed('ADMIN_ACTION', { detail: 'Pitch sequence reordered and broadcasted' });
+  }
+
+  function initDragAndDrop() {
+    const listEl = document.getElementById('reorder-startup-list');
+    if (!listEl) return;
+
+    let draggedItem = null;
+    let draggedIdx = null;
+
+    const items = listEl.querySelectorAll('.reorder-item');
+    items.forEach(item => {
+      item.addEventListener('dragstart', (e) => {
+        draggedItem = item;
+        draggedIdx = parseInt(item.dataset.index, 10);
+        item.classList.add('dragging');
+        if (e.dataTransfer) {
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', item.dataset.id || '');
+        }
+      });
+
+      item.addEventListener('dragend', () => {
+        item.classList.remove('dragging');
+        items.forEach(it => it.classList.remove('drag-over'));
+        draggedItem = null;
+        draggedIdx = null;
+      });
+
+      item.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+        if (!item.classList.contains('dragging')) {
+          items.forEach(it => {
+            if (it !== item) it.classList.remove('drag-over');
+          });
+          item.classList.add('drag-over');
+        }
+      });
+
+      item.addEventListener('dragleave', () => {
+        item.classList.remove('drag-over');
+      });
+
+      item.addEventListener('drop', (e) => {
+        e.preventDefault();
+        item.classList.remove('drag-over');
+        const targetIdx = parseInt(item.dataset.index, 10);
+        if (draggedIdx !== null && !isNaN(targetIdx) && draggedIdx !== targetIdx) {
+          const currentOrder = startups.map(s => s.id);
+          const [movedId] = currentOrder.splice(draggedIdx, 1);
+          currentOrder.splice(targetIdx, 0, movedId);
+          applyStartupOrder(currentOrder, true);
+          renderAdmin();
+          toast(`Updated sequence: ${startups[targetIdx]?.name || 'Startup'} is now Booth ${targetIdx + 1}. Click 'Broadcast New Order' to sync to phones.`);
+        }
+      });
+    });
+  }
+
+  /* ══════════════════════════════════════════════════════════════
      RENDER: Admin Command Center (Live Submission Counters & Roster)
      ══════════════════════════════════════════════════════════════ */
   function renderAdmin() {
@@ -2169,6 +2361,9 @@
           </div>
         </section>
       </div>
+
+      <!-- Startup Booth Order & Pitch Sequence (Live Drag & Drop + Broadcast) -->
+      ${renderStartupReorderPanel()}
 
       <!-- Live Startup Completion Matrix -->
       <div class="panel" style="margin-top:22px">
@@ -2430,6 +2625,7 @@
         </div>
       </section>
     `;
+    initDragAndDrop();
   }
 
   /* ══════════════════════════════════════════════════════════════
@@ -3031,7 +3227,54 @@
         return;
       }
 
+      // Startup pitch sequence reordering buttons (Touch & Mouse)
+      const moveUpBtn = e.target.closest('[data-action="order-move-up"]');
+      if (moveUpBtn) {
+        const idx = parseInt(moveUpBtn.dataset.index, 10);
+        if (idx > 0) {
+          const orderIds = startups.map(s => s.id);
+          const temp = orderIds[idx];
+          orderIds[idx] = orderIds[idx - 1];
+          orderIds[idx - 1] = temp;
+          applyStartupOrder(orderIds, true);
+          renderAdmin();
+          toast(`Moved ${startups[idx - 1]?.name || 'Startup'} to Booth ${idx}. Click 'Broadcast New Order' to sync.`);
+        }
+        return;
+      }
+
+      const moveDownBtn = e.target.closest('[data-action="order-move-down"]');
+      if (moveDownBtn) {
+        const idx = parseInt(moveDownBtn.dataset.index, 10);
+        if (idx < startups.length - 1) {
+          const orderIds = startups.map(s => s.id);
+          const temp = orderIds[idx];
+          orderIds[idx] = orderIds[idx + 1];
+          orderIds[idx + 1] = temp;
+          applyStartupOrder(orderIds, true);
+          renderAdmin();
+          toast(`Moved ${startups[idx + 1]?.name || 'Startup'} to Booth ${idx + 2}. Click 'Broadcast New Order' to sync.`);
+        }
+        return;
+      }
+
       const action = e.target.closest('[data-action]')?.dataset.action;
+      if (action === 'broadcast-order') {
+        const orderIds = startups.map(s => s.id);
+        broadcastStartupOrder(orderIds);
+        renderAll();
+        toast('✓ Pitch sequence broadcasted to all attendee devices & stage display!');
+        return;
+      }
+      if (action === 'reset-order') {
+        if (confirm('Reset startup pitch sequence to default order?')) {
+          const defaultIds = STARTUPS_MASTER.map(s => s.id);
+          broadcastStartupOrder(defaultIds);
+          renderAll();
+          toast('✓ Startup order reset to default sequence.');
+        }
+        return;
+      }
       if (action === 'join') joinEvent();
       if (action === 'back-list') backToList();
       if (action === 'change-vote') {
