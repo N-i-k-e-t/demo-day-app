@@ -33,7 +33,12 @@
   const RESPONSE = { INTERESTED: 'INTERESTED', EXPLORE: 'EXPLORE', NOT_INTERESTED: 'NOT_INTERESTED' };
   const COLORS = { INTERESTED: 'green', EXPLORE: 'yellow', NOT_INTERESTED: 'blue' };
 
-  const ORDER_STORAGE_KEY = 'startup-demo-order-v2';
+  const ORDER_STORAGE_KEY = 'startup-demo-order-v6';
+
+  // Purge any stale order keys from older sessions
+  ['startup-demo-order', 'startup-demo-order-v1', 'startup-demo-order-v2', 'startup-demo-order-v3', 'startup-demo-order-v4', 'startup-demo-order-v5'].forEach(k => {
+    try { localStorage.removeItem(k); } catch (_) {}
+  });
 
   const STARTUPS_MASTER = [
     {
@@ -184,8 +189,14 @@
 
   function loadStartupOrder() {
     try {
-      const saved = JSON.parse(localStorage.getItem(ORDER_STORAGE_KEY));
-      if (Array.isArray(saved) && saved.length > 0) return saved;
+      const raw = localStorage.getItem(ORDER_STORAGE_KEY);
+      if (!raw) return null;
+      const saved = JSON.parse(raw);
+      if (Array.isArray(saved) && saved.length === STARTUPS_MASTER.length) {
+        const masterIds = new Set(STARTUPS_MASTER.map(s => s.id));
+        const allValid = saved.every(id => masterIds.has(id));
+        if (allValid) return saved;
+      }
     } catch (_) {}
     return null;
   }
@@ -866,7 +877,7 @@
               response: r.response_type,
               startupId: r.startup_id,
               startupNumber: startups.find(s => s.id === r.startup_id)?.n || parseInt((r.startup_id || '').replace(/\D/g, ''), 10) || 1,
-              startupName: r.startup_name || existing?.startupName || (startups.find(s => s.id === r.startup_id)?.name || r.startup_id),
+              startupName: (startups.find(s => s.id === r.startup_id)?.name || r.startup_name || existing?.startupName || r.startup_id),
               investorKey: key,
               investorName: session?.name || 'Registered Investor',
               investorEmail: session?.email || email,
@@ -1046,8 +1057,10 @@
         (adminLiveStats.investors || []).forEach(inv => invMap.set(inv.investor_key, inv));
         adminLiveStats.responses = respRes.data.map(r => {
           const inv = invMap.get(r.investor_key);
+          const matchedStartup = startups.find(s => s.id === r.startup_id);
           return {
             ...r,
+            startup_name: matchedStartup ? matchedStartup.name : (r.startup_name || r.startup_id),
             investor_name: (inv ? inv.full_name : 'Registered Investor'),
             investor_email: (inv ? inv.email : r.investor_key)
           };
@@ -1107,7 +1120,7 @@
     const invEmail = (vote.investorEmail || vote.investor_email || '').trim().toLowerCase();
     const startupId = vote.startupId || vote.startup_id;
     const respType = vote.response || vote.response_type;
-    const startupName = vote.startupName || vote.startup_name || (startups.find(s => s.id === startupId)?.name || startupId);
+    const startupName = (startups.find(s => s.id === startupId)?.name || vote.startupName || vote.startup_name || startupId);
     const recordedAt = vote.recordedAt || vote.recorded_at || new Date().toISOString();
     const idempotencyKey = vote.idempotencyKey || vote.idempotency_key || `${invKey}:${startupId}`;
 
@@ -2394,9 +2407,12 @@
                 return `<tr>
                   <td><strong>B${s.n}</strong></td>
                   <td>
-                    <div style="display:flex;align-items:center;gap:6px">
+                    <div style="display:flex;align-items:center;gap:8px">
                       <span class="booth-tag">Booth ${s.n}</span>
-                      <strong style="font-size:14px">${s.name}</strong>
+                      <div>
+                        <strong style="font-size:14px;color:#0f172a;display:block">${s.name}</strong>
+                        <div style="font-size:11.5px;color:#64748b;font-weight:550">${s.subSector} • ${s.stage}</div>
+                      </div>
                     </div>
                   </td>
                   <td>${hasVotes ? `<strong style="font-size:14px;color:#0f172a">${count}</strong> <span style="color:#94a3b8">/ ${totalInvestors}</span>` : '<span style="color:#94a3b8;font-size:12px">—</span>'}</td>
@@ -2493,7 +2509,7 @@
                     } else if (resp === RESPONSE.EXPLORE) {
                       return `<span class="booth-resp-badge yellow" title="Booth ${s.n} (${s.name}): Explore More (?)">B${s.n} ?</span>`;
                     } else if (resp === RESPONSE.NOT_INTERESTED) {
-                      return `<span class="booth-resp-badge blue" title="Booth ${s.n} (${s.name}): Not Interested (👎)">B${s.n} 👎</span>`;
+                      return `<span class="booth-resp-badge blue" title="Booth ${s.n} (${s.name}): Not my area of interest (👎)">B${s.n} 👎</span>`;
                     } else {
                       return `<span class="booth-resp-badge empty" title="Booth ${s.n} (${s.name}): Pending response">B${s.n} ·</span>`;
                     }
@@ -2926,6 +2942,7 @@
       if (confirm('Are you sure you want to reset all demo state?')) {
         recordFeed('ADMIN_ACTION', { detail: 'Demo reset' });
         localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(ORDER_STORAGE_KEY);
         localStorage.removeItem('startup-demo-admin-backup-v2');
         location.reload();
       }
@@ -3093,6 +3110,8 @@
     saveState();
 
     adminLiveStats.responses = [];
+    localStorage.removeItem(ORDER_STORAGE_KEY);
+    applyStartupOrder(STARTUPS_MASTER.map(s => s.id), true);
     localStorage.removeItem('startup-demo-admin-backup-v2');
 
     audit('SESSION_RESET_AND_ARCHIVED', `Session reset: ${totalVotes} votes exported to CSV; fresh session ready`);
