@@ -593,6 +593,10 @@ async function getActivityStream(cutoffInput = DEFAULT_CUTOFF_IST, limit = 100) 
     if (f.actor_id && eligibleKeys.has(f.actor_id)) {
       if (f.event_type === 'RESPONSE_SUBMITTED' || f.event_type === 'RESPONSE_UPDATED') {
         const actionVerb = f.event_type === 'RESPONSE_UPDATED' ? 'updated vote to' : 'voted';
+        const label = f.response_type === 'NOT_INTERESTED' ? 'Not my area of interest'
+                    : f.response_type === 'EXPLORE' ? 'Explore more'
+                    : f.response_type === 'INTERESTED' ? 'Interested'
+                    : f.response_type;
         events.push({
           id: `feed_${f.id}`,
           timestamp: f.created_at,
@@ -604,7 +608,7 @@ async function getActivityStream(cutoffInput = DEFAULT_CUTOFF_IST, limit = 100) 
           actorId: f.actor_id,
           startupName: f.startup_name || f.startup_id,
           responseType: f.response_type,
-          detail: `${f.actor_name || 'Investor'} ${actionVerb} ${f.response_type} for ${f.startup_name || f.startup_id}`
+          detail: `${f.actor_name || 'Investor'} ${actionVerb} "${label}" for ${f.startup_name || f.startup_id}`
         });
       }
     }
@@ -647,6 +651,14 @@ async function generateCsvExport(reportType = 'startup-votes', cutoffInput = DEF
     const headers = ['Investor Name', 'Investor Email', 'Signup Time (IST)', 'Startup', 'Pitch Number', 'Vote', 'Vote Timestamp (IST)'];
     const rows = [headers.join(',')];
 
+    function formatCsvVote(r) {
+      if (r === 'NOT_INTERESTED') return 'Not my area of interest';
+      if (r === 'EXPLORE') return 'Explore more';
+      if (r === 'INTERESTED') return 'Interested';
+      if (r === 'NOT_VOTED') return 'Not voted';
+      return r || '—';
+    }
+
     // For every eligible investor and every startup
     eligibility.eligibleInvestors.forEach(inv => {
       const invVotes = data.responses.filter(r => r.investor_key === inv.investor_key);
@@ -661,7 +673,7 @@ async function generateCsvExport(reportType = 'startup-votes', cutoffInput = DEF
           escapeCsv(formatIST(inv.joined_at)),
           escapeCsv(s.name),
           escapeCsv(s.n),
-          escapeCsv(v ? v.response_type : 'NOT_VOTED'),
+          escapeCsv(v ? formatCsvVote(v.response_type) : 'Not voted'),
           escapeCsv(v ? formatIST(v.recorded_at) : '—')
         ].join(','));
       });
@@ -678,6 +690,14 @@ async function generateCsvExport(reportType = 'startup-votes', cutoffInput = DEF
   // Columns: Pitch Number, Startup Name, Investor Name, Investor Email, Investor Signup Time, Vote, Vote Timestamp
   const headers = ['Pitch Number', 'Startup Name', 'Investor Name', 'Investor Email', 'Investor Signup Time (IST)', 'Vote', 'Vote Timestamp (IST)'];
   const rows = [headers.join(',')];
+
+  function formatCsvVote(r) {
+    if (r === 'NOT_INTERESTED') return 'Not my area of interest';
+    if (r === 'EXPLORE') return 'Explore more';
+    if (r === 'INTERESTED') return 'Interested';
+    if (r === 'NOT_VOTED') return 'Not voted';
+    return r || '—';
+  }
 
   // Eligible responses sorted by pitch number, then recorded_at
   const eligibleVotes = data.responses.filter(r => eligibleInvestorMap.has(r.investor_key));
@@ -697,7 +717,7 @@ async function generateCsvExport(reportType = 'startup-votes', cutoffInput = DEF
       escapeCsv(inv ? inv.full_name : v.investor_name),
       escapeCsv(inv ? inv.email : v.investor_email),
       escapeCsv(inv ? formatIST(inv.joined_at) : '—'),
-      escapeCsv(v.response_type),
+      escapeCsv(formatCsvVote(v.response_type)),
       escapeCsv(formatIST(v.recorded_at))
     ].join(','));
   });

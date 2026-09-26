@@ -47,15 +47,27 @@ function generateStartupHtml(startup, cutoffDisplay) {
   const voterRows = voters.length === 0 
     ? `<tr><td colspan="7" style="text-align: center; color: #64748b; padding: 24px;">No votes recorded from eligible investors yet.</td></tr>`
     : voters.map((v, idx) => {
-        const badgeColor = v.voteSelection === 'INTERESTED' ? '#059669' 
-                         : v.voteSelection === 'EXPLORE' ? '#0284c7' 
+        const isInterested = v.voteSelection === 'INTERESTED';
+        const isExplore = v.voteSelection === 'EXPLORE';
+        const isNotInterested = v.voteSelection === 'NOT_INTERESTED';
+
+        const badgeColor = isInterested ? '#059669' 
+                         : isExplore ? '#b45309' 
+                         : isNotInterested ? '#1d4ed8' 
                          : '#64748b';
-        const badgeBg = v.voteSelection === 'INTERESTED' ? '#ecfdf5' 
-                      : v.voteSelection === 'EXPLORE' ? '#f0f9ff' 
+        const badgeBg = isInterested ? '#ecfdf5' 
+                      : isExplore ? '#fffbeb' 
+                      : isNotInterested ? '#eff6ff' 
                       : '#f1f5f9';
-        const badgeBorder = v.voteSelection === 'INTERESTED' ? '#a7f3d0' 
-                          : v.voteSelection === 'EXPLORE' ? '#bae6fd' 
+        const badgeBorder = isInterested ? '#a7f3d0' 
+                          : isExplore ? '#fde68a' 
+                          : isNotInterested ? '#bfdbfe' 
                           : '#cbd5e1';
+
+        const displayLabel = isInterested ? 'Interested' 
+                           : isExplore ? 'Explore more' 
+                           : isNotInterested ? 'Not my area of interest' 
+                           : (v.voteSelection || 'Not responded');
 
         const historyNote = v.voteChangesCount > 0 
           ? `<span style="font-size: 10px; color: #b45309; background: #fef3c7; border: 1px solid #fde68a; padding: 1px 5px; border-radius: 4px; margin-left: 4px;">Changed (${v.voteChangesCount}x)</span>`
@@ -71,8 +83,8 @@ function generateStartupHtml(startup, cutoffDisplay) {
           <td style="color: #334155; font-size: 11px;">${escapeHtml(v.investorEmail)}</td>
           <td style="font-size: 11px; color: #475569;">${escapeHtml(v.signupAtFormatted)}</td>
           <td>
-            <span style="display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; background: ${badgeBg}; color: ${badgeColor}; border: 1px solid ${badgeBorder};">
-              ${escapeHtml(v.voteSelection)}
+            <span style="display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 10.5px; font-weight: 700; background: ${badgeBg}; color: ${badgeColor}; border: 1px solid ${badgeBorder}; white-space: nowrap;">
+              ${escapeHtml(displayLabel)}
             </span>
             ${historyNote}
           </td>
@@ -255,11 +267,11 @@ function generateStartupHtml(startup, cutoffDisplay) {
       height: 100%;
     }
     .bar-segment-explore {
-      background: #0284c7;
+      background: #f59e0b;
       height: 100%;
     }
     .bar-segment-not-interested {
-      background: #94a3b8;
+      background: #2563eb;
       height: 100%;
     }
     .sentiment-legend {
@@ -379,9 +391,14 @@ function generateStartupHtml(startup, cutoffDisplay) {
       <div class="kpi-sub">High conviction backers</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label">Explore / Soft Backing</div>
-      <div class="kpi-value" style="color: #0284c7;">${startup.exploreVotes} <span style="font-size: 13px; font-weight: normal; color: #64748b;">(${dist.explorePct}%)</span></div>
-      <div class="kpi-sub">${startup.notInterestedVotes} Not Interested (${dist.notInterestedPct}%)</div>
+      <div class="kpi-label">Explore More</div>
+      <div class="kpi-value" style="color: #d97706;">${startup.exploreVotes} <span style="font-size: 13px; font-weight: normal; color: #64748b;">(${dist.explorePct}%)</span></div>
+      <div class="kpi-sub">Diligence & questions</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Not My Area of Interest</div>
+      <div class="kpi-value" style="color: #2563eb;">${startup.notInterestedVotes} <span style="font-size: 13px; font-weight: normal; color: #64748b;">(${dist.notInterestedPct}%)</span></div>
+      <div class="kpi-sub">Out of investment mandate</div>
     </div>
   </div>
 
@@ -402,12 +419,12 @@ function generateStartupHtml(startup, cutoffDisplay) {
         <div><strong>Interested:</strong> ${startup.interestedVotes} (${dist.interestedPct}%)</div>
       </div>
       <div class="legend-item">
-        <div class="legend-dot" style="background: #0284c7;"></div>
-        <div><strong>Explore:</strong> ${startup.exploreVotes} (${dist.explorePct}%)</div>
+        <div class="legend-dot" style="background: #f59e0b;"></div>
+        <div><strong>Explore more:</strong> ${startup.exploreVotes} (${dist.explorePct}%)</div>
       </div>
       <div class="legend-item">
-        <div class="legend-dot" style="background: #94a3b8;"></div>
-        <div><strong>Not Interested:</strong> ${startup.notInterestedVotes} (${dist.notInterestedPct}%)</div>
+        <div class="legend-dot" style="background: #2563eb;"></div>
+        <div><strong>Not my area of interest:</strong> ${startup.notInterestedVotes} (${dist.notInterestedPct}%)</div>
       </div>
       <div class="legend-item" style="margin-left: auto; color: #64748b;">
         First Vote: <strong>${escapeHtml(startup.firstVoteAtFormatted || '—')}</strong> • Last Vote: <strong>${escapeHtml(startup.lastVoteAtFormatted || '—')}</strong>

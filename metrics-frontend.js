@@ -92,6 +92,15 @@
     return `${hr}h ${remMin}m`;
   }
 
+  // Helper: Format vote to friendly response button label
+  function formatVoteLabel(vote) {
+    if (vote === 'INTERESTED') return 'Interested';
+    if (vote === 'EXPLORE') return 'Explore more';
+    if (vote === 'NOT_INTERESTED') return 'Not my area of interest';
+    if (vote === 'NOT_VOTED') return 'Not voted';
+    return vote || '—';
+  }
+
   // Module State
   const state = {
     cutoff: sessionStorage.getItem('startup-demo-metrics-cutoff') || DEFAULT_CUTOFF_IST,
@@ -572,7 +581,7 @@
           esc(v.investorName),
           esc(v.investorEmail),
           esc(v.signupAtFormatted),
-          esc(v.voteSelection),
+          esc(formatVoteLabel(v.voteSelection)),
           esc(v.voteTimestampFormatted)
         ].join(','));
       });
@@ -600,7 +609,7 @@
           esc(inv.signupTimestampFormatted),
           esc(ev.startupName),
           esc(ev.pitchNumber),
-          esc(ev.vote),
+          esc(formatVoteLabel(ev.vote)),
           esc(ev.voteTimestampFormatted)
         ].join(','));
       });
@@ -854,7 +863,7 @@
           <div class="sentiment-bar-wrap">
             <div class="sentiment-bar-fill interested" style="width:${vot.interestedPct}%" title="Interested: ${vot.interestedCount}"></div>
             <div class="sentiment-bar-fill explore" style="width:${vot.explorePct}%" title="Explore: ${vot.exploreCount}"></div>
-            <div class="sentiment-bar-fill not-interested" style="width:${vot.notInterestedPct}%" title="Not Interested: ${vot.notInterestedCount}"></div>
+            <div class="sentiment-bar-fill not-interested" style="width:${vot.notInterestedPct}%" title="Not my area of interest: ${vot.notInterestedCount}"></div>
           </div>
           <div class="metrics-card-footer">
             <span style="color:#16a34a;font-weight:800">👍 ${vot.interestedCount} (${vot.interestedPct}%)</span>
@@ -1002,7 +1011,7 @@
               <th class="sortable" data-sort-startup="participationPct" style="width:140px">Participation${sortIndicator('participationPct')}</th>
               <th class="sortable" data-sort-startup="interestedVotes">Interested${sortIndicator('interestedVotes')}</th>
               <th class="sortable" data-sort-startup="exploreVotes">Explore${sortIndicator('exploreVotes')}</th>
-              <th class="sortable" data-sort-startup="notInterestedVotes">Not Interested${sortIndicator('notInterestedVotes')}</th>
+              <th class="sortable" data-sort-startup="notInterestedVotes">Not my area of interest${sortIndicator('notInterestedVotes')}</th>
               <th>Total Votes</th>
               <th class="sortable" data-sort-startup="lastVoteAt">Last Vote${sortIndicator('lastVoteAt')}</th>
               <th style="width:100px;text-align:center">Drill-Down</th>
@@ -1098,7 +1107,7 @@
                     ? Explore (${startup.exploreVotes})
                   </button>
                   <button class="metrics-filter-chip ${voterFilter === 'NOT_INTERESTED' ? 'active' : ''}" data-startup-voter-filter="NOT_INTERESTED" data-startup-id="${startup.startupId}">
-                    👎 Not Interested (${startup.notInterestedVotes})
+                    👎 Not my area of interest (${startup.notInterestedVotes})
                   </button>
                   <button class="metrics-filter-chip ${voterFilter === 'NOT_VOTED' ? 'active' : ''}" data-startup-voter-filter="NOT_VOTED" data-startup-id="${startup.startupId}">
                     ⏳ Not Voted (${startup.nonVoters.length})
@@ -1142,12 +1151,12 @@
                         <td style="color:#64748b;font-size:11px">${v.signupAtFormatted || '—'}</td>
                         <td>
                           <span class="live-stat-chip ${badgeClass}" style="padding:2px 8px;font-size:10.5px;font-weight:800">
-                            ${badgeIcon} ${v.voteSelection}
+                            ${badgeIcon} ${formatVoteLabel(v.voteSelection)}
                           </span>
                         </td>
                         <td style="color:#64748b;font-size:11px">${v.voteTimestampFormatted || '—'}</td>
                         <td style="color:#0f172a;font-weight:700">${v.durationSignupToVoteFormatted || '—'}</td>
-                        <td><strong>${v.currentVote || '—'}</strong></td>
+                        <td><strong>${formatVoteLabel(v.currentVote)}</strong></td>
                         <td>
                           ${v.voteChangesCount > 0 ? `
                             <span class="live-stat-chip yellow" style="padding:2px 8px;font-size:10px;font-weight:800" title="${v.historyTrail?.map(h => `${h.type}: ${h.selection}`).join(' ➔ ') || ''}">
@@ -1329,7 +1338,7 @@
                         <td style="color:#64748b">${ev.subSector}</td>
                         <td>
                           <span class="live-stat-chip ${badgeClass}" style="padding:2px 8px;font-size:10.5px;font-weight:800">
-                            ${badgeIcon} ${ev.vote}
+                            ${badgeIcon} ${formatVoteLabel(ev.vote)}
                           </span>
                         </td>
                         <td style="color:#64748b;font-size:11px">${ev.voteTimestampFormatted}</td>
@@ -1340,7 +1349,7 @@
                             </span>
                           ` : '<span style="color:#94a3b8;font-size:11px">0</span>'}
                         </td>
-                        <td><strong>${ev.currentVote || '—'}</strong></td>
+                        <td><strong>${formatVoteLabel(ev.currentVote)}</strong></td>
                       </tr>
                     `;
                   }).join('')}
