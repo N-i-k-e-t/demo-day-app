@@ -1740,6 +1740,13 @@
     return `<div class="startup-hero-card">
       <div class="shc-header">
         <div class="shc-info">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+            <span class="booth-tag" style="font-size:12px;padding:4px 10px;font-weight:800">Booth ${s.n}</span>
+            <span class="shc-subsector-badge">
+              <span class="shc-subsector-icon">🌱</span>
+              <span><strong>Sub-Sector:</strong> ${s.subSector}</span>
+            </span>
+          </div>
           <h2 class="shc-title">${s.name}</h2>
           <div class="shc-headline">${s.headline}</div>
           <p class="shc-tagline">${s.tagline}</p>
