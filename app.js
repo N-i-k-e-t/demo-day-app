@@ -371,7 +371,7 @@
   }
 
   function responseLabel(value) {
-    return value === RESPONSE.INTERESTED ? 'Interested' : value === RESPONSE.EXPLORE ? 'Explore more' : value === RESPONSE.NOT_INTERESTED ? 'Not interested' : 'Tap to vote';
+    return value === RESPONSE.INTERESTED ? 'Interested' : value === RESPONSE.EXPLORE ? 'Explore more' : value === RESPONSE.NOT_INTERESTED ? 'Not my area of interest' : 'Tap to vote';
   }
 
   function responseColor(value) {
@@ -1824,7 +1824,7 @@
         </button>
         <button class="response-btn blue ${pendingChoice === 'NOT_INTERESTED' ? 'selected' : ''}" data-select-response="NOT_INTERESTED">
           <span class="response-icon">👎</span>
-          <span><strong>Not interested</strong><span>Not a fit for our current investment mandate.</span></span>
+          <span><strong>Not my area of interest</strong><span>Not a fit for our current investment mandate.</span></span>
           ${pendingChoice === 'NOT_INTERESTED' ? '<span class="selected-indicator"><span>✓ Selected</span></span>' : '<span style="margin-left:auto;color:#8fa0bb">›</span>'}
         </button>
       </div>
@@ -1832,7 +1832,7 @@
       ${pendingChoice ? `
         <div class="confirm-box ${COLORS[pendingChoice]}">
           <div class="confirm-box-header">
-            <span class="confirm-badge">${isEdit ? 'Step 2: Confirm Update' : 'Step 2: Confirm Selection'}</span>
+            <span class="confirm-badge">${isEdit ? 'Confirm Update' : 'Confirm Selection'}</span>
             <span style="font-size:11px;color:#94a3b8">Prevents accidental taps</span>
           </div>
           <div class="confirm-choice-label ${COLORS[pendingChoice]}">
@@ -1847,12 +1847,7 @@
             </button>
           </div>
         </div>
-      ` : `
-        <div class="notice" style="margin-top:12px">
-          <strong>🔒 2-Step Safe Voting</strong>
-          Tap any of the 3 options above to select it. You will be prompted to confirm your submission to avoid accidental mis-touches.
-        </div>
-      `}
+      ` : ''}
     </main>${renderBottomNav('startups')}`;
   }
 
@@ -1915,7 +1910,7 @@
         <button class="chip ${myResponseFilter === 'all' ? 'active' : ''}" data-resp-filter="all">All (${allAnswered.length})</button>
         <button class="chip chip-interested ${myResponseFilter === 'INTERESTED' ? 'active' : ''}" data-resp-filter="INTERESTED">👍 Interested (${interestedList.length})</button>
         <button class="chip chip-explore ${myResponseFilter === 'EXPLORE' ? 'active' : ''}" data-resp-filter="EXPLORE">? Explore More (${exploreList.length})</button>
-        <button class="chip chip-not-interested ${myResponseFilter === 'NOT_INTERESTED' ? 'active' : ''}" data-resp-filter="NOT_INTERESTED">👎 Not Interested (${notInterestedList.length})</button>
+        <button class="chip chip-not-interested ${myResponseFilter === 'NOT_INTERESTED' ? 'active' : ''}" data-resp-filter="NOT_INTERESTED">👎 Not My Area (${notInterestedList.length})</button>
       </div>
       <div class="my-responses" style="display:flex;flex-direction:column;gap:8px">
         ${rows || `<div class="notice">No responses found for this filter.</div>`}
@@ -2264,7 +2259,7 @@
           ${totalResponsesCount > 0 ? `
             <span class="live-stat-chip green">👍 <strong>${allInterested}</strong> Interested</span>
             <span class="live-stat-chip yellow">? <strong>${allExplore}</strong> Explore More</span>
-            <span class="live-stat-chip blue">👎 <strong>${allNotInterested}</strong> Not Interested</span>
+            <span class="live-stat-chip blue">👎 <strong>${allNotInterested}</strong> Not My Area</span>
             <span class="live-stat-chip gray">⏳ <strong>${Math.max(0, maxExpectedResponses - totalResponsesCount)}</strong> Pending</span>
           ` : `
             <span class="live-stat-chip gray" style="font-weight:600;padding:6px 14px">— Awaiting live responses across 12 startup booths —</span>
@@ -2572,7 +2567,7 @@
           <div style="margin-top:8px;display:flex;gap:10px;flex-wrap:wrap">
             <span class="live-stat-chip green" style="font-weight:800;padding:4px 10px">👍 ${published.i}% Interested</span>
             <span class="live-stat-chip yellow" style="font-weight:800;padding:4px 10px">? ${published.e}% Explore More</span>
-            <span class="live-stat-chip blue" style="font-weight:800;padding:4px 10px">👎 ${published.n}% Not Interested</span>
+            <span class="live-stat-chip blue" style="font-weight:800;padding:4px 10px">👎 ${published.n}% Not My Area</span>
           </div>
         </div>` : '<div class="notice">No snapshot published yet for this booth. Click "Publish to Stage" to make aggregated results visible on the Stage screen.</div>'}
       </div>
@@ -2661,7 +2656,7 @@
           <div class="stage-metrics">
             <div class="stage-metric stage-green"><strong>${p.i}%</strong><span>Interested</span></div>
             <div class="stage-metric stage-yellow"><strong>${p.e}%</strong><span>Explore More</span></div>
-            <div class="stage-metric stage-blue"><strong>${p.n}%</strong><span>Not Interested</span></div>
+            <div class="stage-metric stage-blue"><strong>${p.n}%</strong><span>Not My Area</span></div>
           </div>
         </div>
       </section>`;
