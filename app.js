@@ -346,7 +346,7 @@
   }
 
   function responseLabel(value) {
-    return value === RESPONSE.INTERESTED ? 'Interested' : value === RESPONSE.EXPLORE ? 'Explore more' : value === RESPONSE.NOT_INTERESTED ? 'Not my area of interest' : 'Tap to vote';
+    return value === RESPONSE.INTERESTED ? 'Interested' : value === RESPONSE.EXPLORE ? 'Explore more' : value === RESPONSE.NOT_INTERESTED ? 'Not my area of interest' : 'Tap to respond';
   }
 
   function responseColor(value) {
@@ -1932,10 +1932,6 @@
         <button class="primary-cta" data-action="join">Enter Live Event →</button>
       </div>
 
-      <div class="notice" style="margin-top:14px">
-        <strong>⚡ Multi-Login & Zero Override Protection</strong>
-        Your account is uniquely tied to your email address. Multiple investors with identical names or multiple devices will never overwrite each other's score records.
-      </div>
     </main>`;
   }
 
