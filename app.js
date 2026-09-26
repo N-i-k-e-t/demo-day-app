@@ -33,10 +33,10 @@
   const RESPONSE = { INTERESTED: 'INTERESTED', EXPLORE: 'EXPLORE', NOT_INTERESTED: 'NOT_INTERESTED' };
   const COLORS = { INTERESTED: 'green', EXPLORE: 'yellow', NOT_INTERESTED: 'blue' };
 
-  const ORDER_STORAGE_KEY = 'startup-demo-order-v8';
+  const ORDER_STORAGE_KEY = 'startup-demo-order-v9';
 
   // Purge any stale order keys from older sessions
-  ['startup-demo-order', 'startup-demo-order-v1', 'startup-demo-order-v2', 'startup-demo-order-v3', 'startup-demo-order-v4', 'startup-demo-order-v5', 'startup-demo-order-v6', 'startup-demo-order-v7'].forEach(k => {
+  ['startup-demo-order', 'startup-demo-order-v1', 'startup-demo-order-v2', 'startup-demo-order-v3', 'startup-demo-order-v4', 'startup-demo-order-v5', 'startup-demo-order-v6', 'startup-demo-order-v7', 'startup-demo-order-v8'].forEach(k => {
     try { localStorage.removeItem(k); } catch (_) {}
   });
 
@@ -89,7 +89,7 @@
     {
       id: 's04',
       n: 6,
-      name: 'Poshaqq',
+      name: 'Poshaqqq',
       subSector: 'Food Processing',
       tagline: 'Ghar jaisa khana with zero kitchen drama.',
       initial: 'P',
@@ -143,7 +143,7 @@
     {
       id: 's12',
       n: 12,
-      name: 'ALTMAT',
+      name: 'Alt Mat',
       subSector: 'Renewable',
       tagline: '',
       initial: 'A',
@@ -1238,6 +1238,23 @@
         }
       });
 
+      // Listen to broadcast force client refresh (to reload all open devices on live updates)
+      realtimeChannel.on('broadcast', { event: 'app_force_refresh' }, async () => {
+        try {
+          if ('caches' in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(k => caches.delete(k)));
+          }
+        } catch (_) {}
+        try {
+          if ('serviceWorker' in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            for (const r of regs) { await r.update(); }
+          }
+        } catch (_) {}
+        window.location.reload();
+      });
+
       // Realtime Postgres Changes: New or updated responses by ANY investor
       realtimeChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'demo_responses' }, (payload) => {
         const row = payload.new || payload.old;
@@ -2008,6 +2025,11 @@
           event: 'startup_order_sync',
           payload: { order: newOrderIds, timestamp: Date.now() }
         });
+        realtimeChannel.send({
+          type: 'broadcast',
+          event: 'app_force_refresh',
+          payload: { order: newOrderIds, timestamp: Date.now() }
+        });
       } catch (err) {
         console.warn('[Realtime Broadcast] Order send notice:', err);
       }
@@ -2020,7 +2042,7 @@
       } catch (_) {}
     }
 
-    // 3. Persist action audit to Supabase
+    // 3. Persist action audit to Supabase & bump state_version
     if (supabase) {
       supabase.from('demo_admin_actions').insert({
         action_type: 'PITCH_ORDER_UPDATED',
@@ -2028,6 +2050,11 @@
         state_snapshot: { order: newOrderIds },
         created_at: new Date().toISOString()
       }).then(() => {}).catch(err => console.warn('[Supabase] Save order error:', err));
+
+      supabase.from('demo_event_state').update({
+        state_version: (state.stateVersion || 20) + 1,
+        updated_at: new Date().toISOString()
+      }).eq('id', 1).then(() => {}).catch(() => {});
     }
 
     recordFeed('ADMIN_ACTION', { detail: 'Pitch sequence reordered and broadcasted' });
@@ -3381,8 +3408,19 @@
   updateNetworkStatusBadges();
 
   if ('serviceWorker' in navigator) {
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!refreshing) {
+        refreshing = true;
+        window.location.reload();
+      }
+    });
+
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(err => {
+      navigator.serviceWorker.register('sw.js').then((reg) => {
+        reg.update();
+        setInterval(() => { reg.update(); }, 15000);
+      }).catch(err => {
         console.warn('[SW] Registration notice:', err);
       });
     });
