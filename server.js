@@ -8,6 +8,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
+const metricsService = require('./metrics-service');
 
 const PORT = parseInt(process.env.PORT || '8080', 10);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -73,6 +74,27 @@ const server = http.createServer((req, res) => {
       service: 'demo-day-app',
       version: '2.1.0'
     }));
+    return;
+  }
+
+  // Handle Admin Metrics API Endpoints
+  if (pathname.startsWith('/admin/metrics')) {
+    const origin = req.headers.origin || 'http://localhost:8080';
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-admin-passcode, x-admin-token');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+
+    metricsService.handleMetricsApiRoute(req, res).catch(err => {
+      console.error('[Server] Metrics route error:', err);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+    });
     return;
   }
 

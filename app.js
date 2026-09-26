@@ -942,6 +942,18 @@
     console.warn('[Admin] SessionStorage access error:', err);
   }
 
+  window.adminActiveView = 'metrics';
+  try {
+    const savedMode = sessionStorage.getItem('startup-demo-admin-active-view');
+    if (savedMode) window.adminActiveView = savedMode;
+  } catch (_) {}
+
+  window.switchAdminMode = (mode) => {
+    window.adminActiveView = mode;
+    try { sessionStorage.setItem('startup-demo-admin-active-view', mode); } catch (_) {}
+    renderAdmin();
+  };
+
   function showAdminLock() {
     const overlay = document.getElementById('admin-lock-overlay');
     if (!overlay) return;
@@ -1056,6 +1068,10 @@
       adminLiveStats.lastSync = new Date();
       adminLiveStats.syncError = null;
 
+      if (window.AdminMetrics) {
+        window.AdminMetrics.onRealtimeUpdate();
+      }
+
       if (route === 'admin' && adminUnlocked) {
         renderAdmin();
       }
@@ -1162,6 +1178,10 @@
         renderInvestor();
         toast(`⚡ Synced: Your vote for ${startupName} was updated from your other device!`);
       }
+    }
+
+    if (window.AdminMetrics) {
+      window.AdminMetrics.onRealtimeUpdate();
     }
 
     if (route === 'admin' && adminUnlocked) {
@@ -2133,6 +2153,11 @@
       return;
     }
 
+    if (window.adminActiveView === 'metrics' && window.AdminMetrics) {
+      window.AdminMetrics.render(root);
+      return;
+    }
+
     const currentStartup = startups[state.pitch - 1] || startups[0];
 
     // Effective Registered Investors List (Cloud + Local Session Fallback)
@@ -2217,6 +2242,16 @@
     const adminURL = `${baseURL}?event=${eventSlug}#admin`;
 
     root.innerHTML = `
+      <!-- Top Mode Switcher -->
+      <div class="admin-mode-tabs">
+        <button class="admin-mode-tab-btn" data-admin-mode="metrics">
+          📊 Live Metrics & Analytics <span class="metrics-badge-pill">${window.AdminMetrics?.getState?.()?.data?.overview?.investors?.eligibleCount || 57} Voters</span>
+        </button>
+        <button class="admin-mode-tab-btn active" data-admin-mode="controls">
+          🎛️ Command Center & Controls
+        </button>
+      </div>
+
       <!-- Live Submission Overview Hero -->
       <section class="admin-hero-live">
         <div class="admin-hero-top">
@@ -3137,6 +3172,14 @@
     document.addEventListener('click', (e) => {
       const nav = e.target.closest('[data-route]');
       if (nav) setRoute(nav.dataset.route);
+
+      const adminModeBtn = e.target.closest('[data-admin-mode]');
+      if (adminModeBtn) {
+        if (window.switchAdminMode) {
+          window.switchAdminMode(adminModeBtn.dataset.adminMode);
+        }
+        return;
+      }
 
       const startup = e.target.closest('[data-startup]');
       if (startup) openStartup(startup.dataset.startup);
